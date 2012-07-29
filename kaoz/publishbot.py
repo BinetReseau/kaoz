@@ -5,11 +5,15 @@
 
 #This file is a part of Kaoz, a free irc notifier
 
+import logging
+
 from twisted.words.protocols.irc import IRCClient
 from twisted.protocols.basic import LineReceiver
 from twisted.internet import reactor
 
 from kaoz import config
+
+logger = logging.getLogger(__name__)
 
 class Publisher(IRCClient):
     nickname = config.NICK
@@ -21,7 +25,7 @@ class Publisher(IRCClient):
     chans = set() 
 
     def connectionMade(self):
-        print "connection made to!", self.transport
+        logger.info(u"connection made to %s", self.transport)
         self.factory.connection = self
         IRCClient.connectionMade(self)
         if self.factory.queued:
@@ -60,21 +64,20 @@ class Publisher(IRCClient):
         self.chans.remove(channel);
 
 
-
 class Listener(LineReceiver):
     def __init__(self):
         self.delimiter='\n'
 
     def connectionMade(self):
-        print "Connection made:", self.transport
+        logger.info(u"Connection made: %s", self.transport)
 
     def lineReceived(self, line):
-        print "Printing message: ", line
+        logger.info(u"Printing message: %s", line)
         password, channel, message = line.split(':', 2)
         assert password == config.LISTENER_PASSWORD
         if self.factory.publisher.connection:
-            print "Sending message:", channel, message
+            logger.info(u"Sending message to %s: %s", channel, message)
             self.factory.publisher.connection.send(channel, message)
         else:
-            print "Queueing message:", channel, message
+            logger.info(u"Queuing message to %s: %s", channel, message)
             self.factory.publisher.queued.append((channel, message))
