@@ -11,23 +11,27 @@ from twisted.words.protocols.irc import IRCClient
 from twisted.protocols.basic import LineReceiver
 from twisted.internet import reactor
 
-from kaoz import config
-
 logger = logging.getLogger(__name__)
 
+
 class Publisher(IRCClient):
-    nickname = config.NICK
-    password = config.IRC_SERVER_PASSWORD
-    realname = config.REAL_NAME
-    username = config.USER_NAME
-    erroneousNickFallback = config.NICK + '_'
-    lineRate = 1
-    chans = set() 
+    def __init__(self, config, *args, **kwargs):
+        """Instantiate the publisher based on configuration."""
+        self.nickname = config.get('irc', 'nickname')
+        self.realname = config.get('irc', 'realname')
+        self.username = config.get('irc', 'username')
+        self.password = config.get('irc', 'server_password')
+
+        erroneousNickFallback = self.nickname + '_'
+        self.lineRate = 1
+        self.chans = set()
+        super(Publisher, self).__init__(*args, **kwargs)
 
     def connectionMade(self):
         logger.info(u"connection made to %s", self.transport)
         self.factory.connection = self
-        IRCClient.connectionMade(self)
+        super(Publisher, self).connectionMade()
+
         if self.factory.queued:
             for channel, message in self.factory.queued:
                 self.send(channel, message)
@@ -46,27 +50,28 @@ class Publisher(IRCClient):
         self.notice(kicker, "That was mean, I'm just a bot you know");
     	reactor.callLater(10, self.join, channel)
         self.chans.remove(channel);
+        super(Publisher, self).kickedFrom(channel, kicker, message)
 
     def nickChanged(self, nick):
-        self.nickChanged(self, nick)
-        reactor.callLater(10, self.setNick, config.NICK)
-        reactor.callLater(300, self.setNick, config.NICK)
+        super(Publisher, self).nickChanged(nick)
+        reactor.callLater(10, self.setNick, self.nickname)
+        reactor.callLater(300, self.setNick, self.nickname)
 
     def irc_ERR_NICKNAMEINUSE(self, prefix, params):
-        reactor.callLater(3000, self.setNick, config.NICK)
+        reactor.callLater(3000, self.setNick, self.nickname)
 
     def joined(self, channel):
-        IRCClient.joined(self, channel)
+        super(Publisher, self).joined(channel)
         self.chans.add(channel);
 
     def left(self, channel):
-        IRCClient.left(self, channel)
-        self.chans.remove(channel);
+        super(Publisher, self).left(channel)
 
 
 class Listener(LineReceiver):
-    def __init__(self):
+    def __init__(self, config):
         self.delimiter='\n'
+        self.expected_password = config.get('listener', 'password')
 
     def connectionMade(self):
         logger.info(u"Connection made: %s", self.transport)
@@ -74,7 +79,10 @@ class Listener(LineReceiver):
     def lineReceived(self, line):
         logger.info(u"Printing message: %s", line)
         password, channel, message = line.split(':', 2)
-        assert password == config.LISTENER_PASSWORD
+        if password != self.expected_password:
+            logger.error(u"Invalid password %s on line %s", password, line)
+            return
+
         if self.factory.publisher.connection:
             logger.info(u"Sending message to %s: %s", channel, message)
             self.factory.publisher.connection.send(channel, message)
