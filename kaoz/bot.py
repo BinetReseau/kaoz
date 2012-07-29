@@ -5,34 +5,90 @@
 
 #This file is a part of Kaoz, a free irc notifier
 
+import ConfigParser
+import optparse
+import sys
+
 from twisted.internet.protocol import ServerFactory, ReconnectingClientFactory
 from twisted.application.internet import TCPServer, SSLServer, TCPClient, SSLClient
 from twisted.application.service import Application
 from twisted.internet.ssl import ClientContextFactory, DefaultOpenSSLContextFactory
 
-from kaoz.publishbot import Listener, Publisher
-import config
+import kaoz
+from kaoz import publishbot
 
-application = Application("Kaoz Irc-Notifier")
+DEFAULT_CONFIG_FILE = '/etc/kaoz.conf'
 
-sf = ServerFactory()
-sf.protocol = Listener
 
-cf = ReconnectingClientFactory()
-cf.protocol = Publisher
-cf.queued = []
-cf.connection = None
+class ListenerFactory(ServerFactory):
+    def __init__(self, config, *args, **kwargs):
+        self.config = config
+        super(ListenerFactory, self).__init__(*args, **kwargs)
 
-sf.publisher = cf
+    def buildProtocol(self, addr):
+        return publishbot.Listener(self.config)
 
-if config.LISTENER_SSL:
-    SSLServer(config.LISTENER_PORT, sf, DefaultOpenSSLContextFactory(config.LISTENER_PEM, config.LISTENER_PEM)).setServiceParent(application)
-else:
-    TCPServer(config.LISTENER_PORT, sf).setServiceParent(application)
-if config.SSL_IRC:
-    ircservice = SSLClient(config.IRC_SERVER, config.IRC_PORT, cf,
-                           ClientContextFactory())
-else:
-    ircservice = TCPClient(config.IRC_SERVER, config.IRC_PORT, cf)
 
-ircservice.setServiceParent(application)
+class PublisherFactory(ReconnectingClientFactory):
+    def __init__(self, config, *args, **kwargs):
+        self.config = config
+        self.queue = []
+        self.connection = None
+        super(PublisherFactory, self).__init__(*args, **kwargs)
+
+    def buildProtocol(self, addr):
+        return publishbot.Publisher(self.config)
+
+
+def main(*config_file_paths):
+    config = ConfigParser.SafeConfigParser()
+    config.read(*config_file_paths)
+
+    application = Application("Kaoz Irc-Notifier")
+    server_factory = ListenerFactory(config)
+    client_factory = PublisherFactory(config)
+
+    if config.get('listener', 'ssl'):
+        server = SSLServer(
+            config.get('listener', 'port'),
+            server_factory,
+            DefaultOpenSSLContextFactory(config.get('listener', 'ssl_cert')),
+        )
+    else:
+        server = TCPServer(config.get('listener', 'port'), server_factory)
+
+    server.setServiceParent(application)
+
+    if config.get('irc', 'ssl'):
+        ircservice = SSLClient(
+            config.get('irc', 'server'),
+            config.get('irc', 'port'),
+            client_factory,
+            ClientContextFactory(),
+        )
+    else:
+        ircservice = TCPClient(
+            config.get('irc', 'server'),
+            config.get('irc', 'port'),
+            client_factory,
+        )
+
+    ircservice.setServiceParent(application)
+
+
+def get_config_path(argv):
+    """Find the file to the right config file."""
+    parser = optparse.OptionParser(
+        usage="usage: %prog [options]",
+        version="%prog " + kaoz.__version__)
+    parser.add_option('-c', '--config', action='store', dest='config',
+        help=u"Read configuration from CONFIG", metavar="CONFIG",
+        default=DEFAULT_CONFIG_FILE)
+
+    opts, argv = parser.parse_args(argv)
+    return opts.config
+
+
+if __name__ == '__main__':
+    config_file = get_config_path(sys.argv)
+    main(config_file)
