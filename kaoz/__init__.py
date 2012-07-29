@@ -3,4 +3,4 @@
 # See the LICENCE file for more informations
 
 __version__ = '0.1.0'
-__author__ = "Binet Réseau <br@frankiz.net>"
+__author__ = "Binet Réseau <br@eleves.polytechnique.fr>"
