@@ -7,7 +7,7 @@ LISTENER_PASSWORD='MyVerySecretPassword'
 LISTENER_HOST='Kaoz-server-hostname'
 LISTENER_PORT=9010
 LISTENER_SSL=true
-LISTENER_CRT='/etc/ssl/kaoz/server.crt' #This file should only contain the certificate, not the kye ;-)
+LISTENER_CRT='/etc/ssl/kaoz/server.crt' #This file should only contain the certificate, not the key ;-)
 
 # Default channel
 DEFAULT_CHANNEL='#default-channel'
