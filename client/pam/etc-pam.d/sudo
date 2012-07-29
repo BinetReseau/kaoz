@@ -1,0 +1,7 @@
+# /etc/pam.d/su with Kaoz log
+
+auth	include		system-auth
+account	include		system-auth
+session	include		system-auth
+session optional    pam_exec.so seteuid /usr/share/kaoz-client/pam/rooting
+

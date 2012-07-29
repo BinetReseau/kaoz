@@ -1,0 +1,8 @@
+#!/bin/sh
+# PAM fallback
+
+KAOZ_IRCPIPE_PATH='/usr/share/kaoz-client'
+source "$KAOZ_IRCPIPE_PATH/stdirc"
+message="${K}3Yubiserv$O -- ${B}${K}4$Validation server not available. Fallback in use.$O"
+echo -e $message | "$KAOZ_IRCPIPE_PATH/ircpipe"
+

@@ -1,0 +1,61 @@
+#!/bin/sh
+# This script is executed each time someone executes su or sudo
+
+KAOZ_IRCPIPE_PATH='/usr/share/kaoz-client'
+source "$KAOZ_IRCPIPE_PATH/stdirc"
+
+if [ $PAM_TYPE = "open_session" ];
+then
+    if [ $PAM_SERVICE = "sudo" ];
+    then
+        if [ $PAM_USER = "root" ];
+        then
+            # Begin sudo root
+            message="${K}13sudo$O -- ${B}${K}7${PAM_RUSER}$O is impersonating ${K}4root$O on $PAM_TTY"
+        else
+            # Begin sudo user
+            message="${K}13sudo$O -- ${B}${K}7${PAM_RUSER}$O is impersonating ${K}7${PAM_USER}$O on $PAM_TTY"
+        fi
+    elif [ $PAM_SERVICE = "su" ];
+    then
+        if [ $PAM_USER = "root" ];
+        then
+            # Begin su root
+            message="${K}13su $O $O -- ${B}${K}7${PAM_RUSER}$O is impersonating ${K}4root$O on $PAM_TTY"
+        else
+            # Begin su user
+            message="${K}13su $O $O -- ${B}${K}7${PAM_RUSER}$O is impersonating ${K}7${PAM_USER}$O on $PAM_TTY"
+        fi
+    else
+        message="${K}4Abnormality -- Unhandled impersonification between $PAM_RUSER and $PAM_USER on $PAM_TTY (using service $PAM_SERVICE and host $PAM_RHOST)"
+    fi
+elif [ $PAM_TYPE = "close_session" ];
+then
+    if [ $PAM_SERVICE = "sudo" ];
+    then
+        if [ $PAM_USER = "root" ];
+        then
+            # End sudo root
+            message="${K}13sudo$O -- ${B}${K}7${PAM_RUSER}$O is no longer impersonating ${K}4root$O on $PAM_TTY"
+        else
+            # End sudo user
+            message="${K}13sudo$O -- ${B}${K}7${PAM_RUSER}$O is no longer impersonating ${K}7${PAM_USER}$O on $PAM_TTY"
+        fi
+    elif [ $PAM_SERVICE = "su" ];
+    then
+        if [ $PAM_USER = "root" ];
+        then
+            # End su root
+            message="${K}13su $O $O -- ${B}${K}7${PAM_RUSER}$O is no longer impersonating ${K}4root$O on $PAM_TTY"
+        else
+            # End su user
+            message="${K}13su $O $O -- ${B}${K}7${PAM_RUSER}$O is no longer impersonating ${K}7${PAM_USER}$O on $PAM_TTY"
+        fi
+    else
+        message="${K}4Abnormality -- Unhandled impersonification end between $PAM_RUSER and $PAM_USER on $PAM_TTY (using service $PAM_SERVICE and host $PAM_RHOST)"
+    fi
+else
+    message="${K}4Abnormality -- Unhandled call to the logger. Data=$PAM_RHOST, $PAM_RUSER, $PAM_SERVICE, $PAM_TTY, $PAM_USER and $PAM_TYPE"
+fi
+echo -e $message | "$KAOZ_IRCPIPE_PATH/ircpipe"
+
