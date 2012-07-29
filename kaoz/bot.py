@@ -8,7 +8,7 @@ from twisted.application.internet import TCPServer, SSLServer, TCPClient, SSLCli
 from twisted.application.service import Application
 from twisted.internet.ssl import ClientContextFactory, DefaultOpenSSLContextFactory
 
-from publishbot import Listener, Publisher
+from kaoz.publishbot import Listener, Publisher
 import config
 
 application = Application("Kaoz Irc-Notifier")

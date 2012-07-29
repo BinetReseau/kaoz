@@ -8,7 +8,7 @@ from twisted.words.protocols.irc import IRCClient
 from twisted.protocols.basic import LineReceiver
 from twisted.internet import reactor
 
-import config
+from kaoz import config
 
 class Publisher(IRCClient):
     nickname = config.NICK
