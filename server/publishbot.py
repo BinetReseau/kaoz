@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 #This file is a part of Kaoz, a free irc notifier
 #Copyright © Binet Réseau, see the licence file for more informations
 
@@ -32,7 +35,7 @@ class Publisher(IRCClient):
     
     def privmsg(self, user, channel, message):
         if channel == self.nickname:
-            self.notice(user, "I'm a bot, hence I will never answer")
+            self.notice(user.split('!')[0], "I'm a bot, hence I will never answer")
 
     def kickedFrom(self, channel, kicker, message):
         self.notice(kicker, "That was mean, I'm just a bot you know");
