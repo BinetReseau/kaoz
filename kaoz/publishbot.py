@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# Copyright © 2011-2012 Binet Réseau
+# See the LICENCE file for more informations
 
 #This file is a part of Kaoz, a free irc notifier
-#Copyright © Binet Réseau, see the licence file for more informations
 
 from twisted.words.protocols.irc import IRCClient
 from twisted.protocols.basic import LineReceiver

@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# Copyright © 2011-2012 Binet Réseau
+# See the LICENCE file for more informations
 
 #This file is a part of Kaoz, a free irc notifier
-#Copyright © Binet Réseau, see the licence file for more informations
 
-# IRC SPECIFIC PARAMETERS
 NICK = 'KaozNotifier' #The nickname in nickname!username@host:realname
 USER_NAME = 'Kaoz' #The username
 REAL_NAME = 'Kaoz is notifying the world' #The realname
