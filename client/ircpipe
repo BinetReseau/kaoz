@@ -6,6 +6,8 @@
 LISTENER_PASSWORD='MyVerySecretPassword'
 LISTENER_HOST='Kaoz-server-hostname'
 LISTENER_PORT=9010
+LISTENER_SSL=true
+LISTENER_CRT='/etc/ssl/kaoz/server.crt' #This file should only contain the certificate, not the kye ;-)
 
 # Default channel
 DEFAULT_CHANNEL='#default-channel'
@@ -23,6 +25,10 @@ while read LINE
 do
 echo "${LISTENER_PASSWORD}:${CHANNEL}:(`hostname`) $LINE" >> $FILENAME
 done
-socat - OPENSSL:${LISTENER_HOST}:${LISTENER_PORT},crnl,verify,cafile=/etc/ssl/kaoz/server.pem < $FILENAME
+if $LISTENER_SSL ; then
+    socat - OPENSSL:${LISTENER_HOST}:${LISTENER_PORT},crnl,verify,cafile=${LISTENER_CRT} < $FILENAME
+else
+    socat - TCP:${LISTENER_HOST}:${LISTENER_PORT} < $FILENAME
+fi
 rm $FILENAME
 
