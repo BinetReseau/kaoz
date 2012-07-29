@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 #This file is a part of Kaoz, a free irc notifier
 #Copyright © Binet Réseau, see the licence file for more informations
 from twisted.internet.protocol import ServerFactory, ReconnectingClientFactory
@@ -21,8 +24,8 @@ cf.connection = None
 sf.publisher = cf
 
 if config.LISTENER_SSL:
-    SSLServer(config.LISTENER_PORT, sf, DefaultOpenSSLContextFactory("/etc/ssl/kaoz/server.pem", "/etc/ssl/kaoz/server.pem")).setServiceParent(application)
-else
+    SSLServer(config.LISTENER_PORT, sf, DefaultOpenSSLContextFactory(config.LISTENER_PEM, config.LISTENER_PEM)).setServiceParent(application)
+else:
     TCPServer(config.LISTENER_PORT, sf).setServiceParent(application)
 if config.SSL_IRC:
     ircservice = SSLClient(config.IRC_SERVER, config.IRC_PORT, cf,
