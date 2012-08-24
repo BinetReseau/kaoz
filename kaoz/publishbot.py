@@ -90,9 +90,14 @@ class Listener(LineReceiver):
     def lineReceived(self, line):
         """When a line is received."""
         logger.info(u"Printing message: %s", line)
+        line_parts = line.split(':', 2)
+        if len(line_parts) != 3:
+            logger.warning("Invalid message: %s", line)
+            return
+
         password, channel, message = line.split(':', 2)
         if password != self.expected_password:
-            logger.error(u"Invalid password %s on line %s", password, line)
+            logger.warning(u"Invalid password %s on line %s", password, line)
             return
 
         if self.factory.publisher.connection:
