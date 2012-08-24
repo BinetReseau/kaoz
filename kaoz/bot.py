@@ -28,7 +28,7 @@ class ListenerFactory(ServerFactory):
 
     def __init__(self, config, *args, **kwargs):
         self.config = config
-        super(ListenerFactory, self).__init__(*args, **kwargs)
+        # No call to super, since Twisted still uses old-style classes :(
 
     def buildProtocol(self, addr):
         return publishbot.Listener(self.config)
@@ -46,7 +46,7 @@ class PublisherFactory(ReconnectingClientFactory):
         self.config = config
         self.queue = []
         self.connection = None
-        super(PublisherFactory, self).__init__(*args, **kwargs)
+        # No call to super, since Twisted still uses old-style classes :(
 
     def buildProtocol(self, addr):
         return publishbot.Publisher(self.config)
@@ -65,11 +65,15 @@ def main(*config_file_paths):
     server_factory = ListenerFactory(config)
     client_factory = PublisherFactory(config)
 
-    if config.get('listener', 'ssl'):
+    if config.get('listener', 'ssl', 'false') == 'true':
+        ssl_context = DefaultOpenSSLContextFactory(
+            config.get('listener', 'ssl_cert'),  # The key
+            config.get('listener', 'ssl_cert'),  # The certificate
+        )
         server = SSLServer(
             config.get('listener', 'port'),
             server_factory,
-            DefaultOpenSSLContextFactory(config.get('listener', 'ssl_cert')),
+            ssl_context,
         )
     else:
         server = TCPServer(config.get('listener', 'port'), server_factory)
