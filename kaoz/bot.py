@@ -89,9 +89,9 @@ def make_application(*config_file_paths):
     client_factory = PublisherFactory(config)
     server_factory = ListenerFactory(config, client_factory)
 
-    listen_port = int(config.get('listener', 'port'))
+    listen_port = config.getint('listener', 'port')
 
-    if config.get('listener', 'ssl', 'false') == 'true':
+    if config.getboolean('listener', 'ssl'):
         assert has_ssl, "SSL support requested but not available"
         ssl_context = DefaultOpenSSLContextFactory(
             config.get('listener', 'ssl_cert'),  # The key
@@ -105,9 +105,9 @@ def make_application(*config_file_paths):
 
     # IRC
     irc_server = config.get('irc', 'server')
-    irc_port = int(config.get('irc', 'port'))
+    irc_port = config.getint('irc', 'port')
 
-    if config.get('irc', 'ssl', 'false') == 'true':
+    if config.getboolean('irc', 'ssl'):
         assert has_ssl, "SSL support requested but not available"
         ssl_context = ClientContextFactory()
         ircservice = SSLClient(irc_server, irc_port, client_factory, ssl_context)
