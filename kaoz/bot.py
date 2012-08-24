@@ -6,6 +6,7 @@
 """Core of the Kaoz system."""
 
 import ConfigParser
+import collections
 import optparse
 
 from twisted.application import app as twisted_app

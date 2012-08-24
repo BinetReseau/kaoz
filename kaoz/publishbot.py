@@ -37,10 +37,9 @@ class Publisher(IRCClient):
         # Twisted still uses old-style classes, 10 years later. Sigh.
         IRCClient.connectionMade(self)
 
-        if self.factory.queued:
-            for channel, message in self.factory.queued:
-                self.send(channel, message)
-        self.factory.queued = []
+        while self.factory.queue:
+            channel, message = self.factory.queue.popleft()
+            self.send(channel, message)
 
     def send(self, channel, message):
         """Send a message to a channel. Will join the channel before talking."""
@@ -101,4 +100,4 @@ class Listener(LineReceiver):
             self.factory.publisher.connection.send(channel, message)
         else:
             logger.info(u"Queuing message to %s: %s", channel, message)
-            self.factory.publisher.queued.append((channel, message))
+            self.factory.publisher.queue.append((channel, message))
