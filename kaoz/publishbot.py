@@ -21,7 +21,7 @@ class Publisher(IRCClient):
         self.username = config.get('irc', 'username')
         self.password = config.get('irc', 'server_password')
 
-        erroneousNickFallback = self.nickname + '_'
+        self.erroneousNickFallback = self.nickname + '_'
         self.lineRate = 1
         self.chans = set()
         super(Publisher, self).__init__(*args, **kwargs)
