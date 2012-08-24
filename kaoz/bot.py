@@ -7,7 +7,6 @@
 
 import ConfigParser
 import optparse
-import sys
 
 from twisted.internet.protocol import ServerFactory, ReconnectingClientFactory
 from twisted.application.internet import TCPServer, SSLServer, TCPClient, SSLClient
@@ -105,8 +104,3 @@ def get_config_path(argv):
 
     opts, argv = parser.parse_args(argv)
     return opts.config
-
-
-if __name__ == '__main__':
-    config_file = get_config_path(sys.argv)
-    main(config_file)
