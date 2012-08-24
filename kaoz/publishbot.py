@@ -24,7 +24,8 @@ class Publisher(IRCClient):
         self.erroneousNickFallback = self.nickname + '_'
         self.lineRate = 1
         self.chans = set()
-        super(Publisher, self).__init__(*args, **kwargs)
+        # Twisted still uses old-style classes, 10 years later. Sigh.
+        # And the parent has no __init__, yay.
 
     def connectionMade(self):
         """Handler for post-connection event.
@@ -33,7 +34,8 @@ class Publisher(IRCClient):
         """
         logger.info(u"connection made to %s", self.transport)
         self.factory.connection = self
-        super(Publisher, self).connectionMade()
+        # Twisted still uses old-style classes, 10 years later. Sigh.
+        IRCClient.connectionMade(self)
 
         if self.factory.queued:
             for channel, message in self.factory.queued:
@@ -56,11 +58,13 @@ class Publisher(IRCClient):
         self.notice(kicker, "That was mean, I'm just a bot you know");
     	reactor.callLater(10, self.join, channel)
         self.chans.remove(channel);
-        super(Publisher, self).kickedFrom(channel, kicker, message)
+        # Twisted still uses old-style classes, 10 years later. Sigh.
+        IRCClient.kickedFrom(self, channel, kicker, message)
 
     def nickChanged(self, nick):
         """Will try to return to initial nick after 10 and 300 seconds."""
-        super(Publisher, self).nickChanged(nick)
+        # Twisted still uses old-style classes, 10 years later. Sigh.
+        IRCClient.nickChanged(self, nick)
         reactor.callLater(10, self.setNick, self.nickname)
         reactor.callLater(300, self.setNick, self.nickname)
 
@@ -70,12 +74,9 @@ class Publisher(IRCClient):
 
     def joined(self, channel):
         """Upon joining a channel"""
-        super(Publisher, self).joined(channel)
+        # Twisted still uses old-style classes, 10 years later. Sigh.
+        IRCClient.joined(self, channel)
         self.chans.add(channel);
-
-    def left(self, channel):
-        """Upon leaving a channel"""
-        super(Publisher, self).left(channel)
 
 
 class Listener(LineReceiver):

@@ -8,10 +8,21 @@
 import ConfigParser
 import optparse
 
+from twisted.application import app as twisted_app
+from twisted.application.internet import TCPServer, TCPClient
+
+try:
+    from twisted.application.internet import SSLClient, SSLServer
+    from twisted.internet.ssl import ClientContextFactory, DefaultOpenSSLContextFactory
+    has_ssl = True
+except ImportError:
+    SSLClient = SSLServer = None
+    ClientContextFactory = DefaultOpenSSLContextFactory = None
+    has_ssl = False
+
+from twisted.application.service import Application, IService
+from twisted.internet import reactor
 from twisted.internet.protocol import ServerFactory, ReconnectingClientFactory
-from twisted.application.internet import TCPServer, SSLServer, TCPClient, SSLClient
-from twisted.application.service import Application
-from twisted.internet.ssl import ClientContextFactory, DefaultOpenSSLContextFactory
 
 import kaoz
 from kaoz import publishbot
@@ -26,12 +37,16 @@ class ListenerFactory(ServerFactory):
         config (dict): current configuration.
     """
 
-    def __init__(self, config, *args, **kwargs):
+    def __init__(self, config, publisher, *args, **kwargs):
         self.config = config
-        # No call to super, since Twisted still uses old-style classes :(
+        self.publisher = publisher
+        # Twisted still uses old-style classes, 10 years later. Sigh.
+        # And the parent has no __init__, yay.
 
     def buildProtocol(self, addr):
-        return publishbot.Listener(self.config)
+        protocol = publishbot.Listener(self.config)
+        protocol.factory = self
+        return protocol
 
 
 class PublisherFactory(ReconnectingClientFactory):
@@ -44,57 +59,73 @@ class PublisherFactory(ReconnectingClientFactory):
 
     def __init__(self, config, *args, **kwargs):
         self.config = config
-        self.queue = []
+        self.queue = collections.deque()
         self.connection = None
-        # No call to super, since Twisted still uses old-style classes :(
+        # Twisted still uses old-style classes, 10 years later. Sigh.
+        # And the parent has no __init__, yay.
 
     def buildProtocol(self, addr):
-        return publishbot.Publisher(self.config)
+        protocol = publishbot.Publisher(self.config)
+        protocol.factory = self
+        return protocol
 
 
-def main(*config_file_paths):
+def make_application(*config_file_paths):
     """Parse configuration and launch a kaoz client/server process.
 
     Args:
         config_file_paths: list of paths to search for configuration files.
+
+    Returns:
+        A twisted Application object
     """
     config = ConfigParser.SafeConfigParser()
     config.read(*config_file_paths)
 
     application = Application("Kaoz Irc-Notifier")
-    server_factory = ListenerFactory(config)
     client_factory = PublisherFactory(config)
+    server_factory = ListenerFactory(config, client_factory)
+
+    listen_port = int(config.get('listener', 'port'))
 
     if config.get('listener', 'ssl', 'false') == 'true':
+        assert has_ssl, "SSL support requested but not available"
         ssl_context = DefaultOpenSSLContextFactory(
             config.get('listener', 'ssl_cert'),  # The key
             config.get('listener', 'ssl_cert'),  # The certificate
         )
-        server = SSLServer(
-            config.get('listener', 'port'),
-            server_factory,
-            ssl_context,
-        )
+        server = SSLServer(listen_port, server_factory, ssl_context)
     else:
-        server = TCPServer(config.get('listener', 'port'), server_factory)
+        server = TCPServer(listen_port, server_factory)
 
     server.setServiceParent(application)
 
-    if config.get('irc', 'ssl'):
-        ircservice = SSLClient(
-            config.get('irc', 'server'),
-            config.get('irc', 'port'),
-            client_factory,
-            ClientContextFactory(),
-        )
+    # IRC
+    irc_server = config.get('irc', 'server')
+    irc_port = int(config.get('irc', 'port'))
+
+    if config.get('irc', 'ssl', 'false') == 'true':
+        assert has_ssl, "SSL support requested but not available"
+        ssl_context = ClientContextFactory()
+        ircservice = SSLClient(irc_server, irc_port, client_factory, ssl_context)
     else:
-        ircservice = TCPClient(
-            config.get('irc', 'server'),
-            config.get('irc', 'port'),
-            client_factory,
-        )
+        ircservice = TCPClient(irc_server, irc_port, client_factory)
 
     ircservice.setServiceParent(application)
+
+    return application
+
+def main(*config_file_paths):
+    import logging
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+    root_logger.addHandler(logging.StreamHandler())
+    root_logger.debug("COIN")
+    application = make_application(*config_file_paths)
+    service = IService(application)
+    service.startService()
+    reactor.addSystemEventTrigger('before', 'shutdown', service.stopService)
+    reactor.run()
 
 
 def get_config_path(argv):
