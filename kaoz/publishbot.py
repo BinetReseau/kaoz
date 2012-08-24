@@ -27,6 +27,10 @@ class Publisher(IRCClient):
         super(Publisher, self).__init__(*args, **kwargs)
 
     def connectionMade(self):
+        """Handler for post-connection event.
+
+        Send all queued messages.
+        """
         logger.info(u"connection made to %s", self.transport)
         self.factory.connection = self
         super(Publisher, self).connectionMade()
@@ -37,33 +41,40 @@ class Publisher(IRCClient):
         self.factory.queued = []
 
     def send(self, channel, message):
+        """Send a message to a channel. Will join the channel before talking."""
         if channel not in self.chans:
             self.join(channel)
         self.say(channel, message)
     
     def privmsg(self, user, channel, message):
+        """Answer to a user privmsg."""
         if channel == self.nickname:
             self.notice(user.split('!')[0], "I'm a bot, hence I will never answer")
 
     def kickedFrom(self, channel, kicker, message):
+        """Handler for kicks. Will join the channel back after 10 seconds."""
         self.notice(kicker, "That was mean, I'm just a bot you know");
     	reactor.callLater(10, self.join, channel)
         self.chans.remove(channel);
         super(Publisher, self).kickedFrom(channel, kicker, message)
 
     def nickChanged(self, nick):
+        """Will try to return to initial nick after 10 and 300 seconds."""
         super(Publisher, self).nickChanged(nick)
         reactor.callLater(10, self.setNick, self.nickname)
         reactor.callLater(300, self.setNick, self.nickname)
 
     def irc_ERR_NICKNAMEINUSE(self, prefix, params):
+        """If the chosen nickname is currently in use."""
         reactor.callLater(3000, self.setNick, self.nickname)
 
     def joined(self, channel):
+        """Upon joining a channel"""
         super(Publisher, self).joined(channel)
         self.chans.add(channel);
 
     def left(self, channel):
+        """Upon leaving a channel"""
         super(Publisher, self).left(channel)
 
 
@@ -73,9 +84,11 @@ class Listener(LineReceiver):
         self.expected_password = config.get('listener', 'password')
 
     def connectionMade(self):
+        """When a client connects"""
         logger.info(u"Connection made: %s", self.transport)
 
     def lineReceived(self, line):
+        """When a line is received."""
         logger.info(u"Printing message: %s", line)
         password, channel, message = line.split(':', 2)
         if password != self.expected_password:

@@ -3,7 +3,7 @@
 # Copyright © 2011-2012 Binet Réseau
 # See the LICENCE file for more informations
 
-#This file is a part of Kaoz, a free irc notifier
+"""Core of the Kaoz system."""
 
 import ConfigParser
 import optparse
@@ -21,6 +21,12 @@ DEFAULT_CONFIG_FILE = '/etc/kaoz.conf'
 
 
 class ListenerFactory(ServerFactory):
+    """Kaoz server.
+
+    Attributes:
+        config (dict): current configuration.
+    """
+
     def __init__(self, config, *args, **kwargs):
         self.config = config
         super(ListenerFactory, self).__init__(*args, **kwargs)
@@ -30,6 +36,13 @@ class ListenerFactory(ServerFactory):
 
 
 class PublisherFactory(ReconnectingClientFactory):
+    """IRC publisher client.
+
+    Attributes:
+        config (dict): current configuration
+        queue (list): messages to send
+    """
+
     def __init__(self, config, *args, **kwargs):
         self.config = config
         self.queue = []
@@ -41,6 +54,11 @@ class PublisherFactory(ReconnectingClientFactory):
 
 
 def main(*config_file_paths):
+    """Parse configuration and launch a kaoz client/server process.
+
+    Args:
+        config_file_paths: list of paths to search for configuration files.
+    """
     config = ConfigParser.SafeConfigParser()
     config.read(*config_file_paths)
 
