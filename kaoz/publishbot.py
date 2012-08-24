@@ -89,7 +89,7 @@ class Listener(LineReceiver):
 
     def lineReceived(self, line):
         """When a line is received."""
-        logger.info(u"Printing message: %s", line)
+        logger.debug(u"Printing message: %s", line)
         line_parts = line.split(':', 2)
         if len(line_parts) != 3:
             logger.warning("Invalid message: %s", line)
@@ -101,8 +101,8 @@ class Listener(LineReceiver):
             return
 
         if self.factory.publisher.connection:
-            logger.info(u"Sending message to %s: %s", channel, message)
+            logger.debug(u"Sending message to %s: %s", channel, message)
             self.factory.publisher.connection.send(channel, message)
         else:
-            logger.info(u"Queuing message to %s: %s", channel, message)
+            logger.debug(u"Queuing message to %s: %s", channel, message)
             self.factory.publisher.queue.append((channel, message))

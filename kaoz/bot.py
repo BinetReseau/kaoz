@@ -7,6 +7,8 @@
 
 import ConfigParser
 import collections
+import logging
+import logging.handlers
 import optparse
 
 from twisted.application import app as twisted_app
@@ -117,11 +119,11 @@ def make_application(*config_file_paths):
     return application
 
 def main(*config_file_paths):
-    import logging
+    # Setup logging
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
-    root_logger.addHandler(logging.StreamHandler())
-    root_logger.debug("COIN")
+    root_logger.setLevel(logging.INFO)
+    root_logger.addHandler(logging.handlers.SysLogHandler('/dev/log'))
+
     application = make_application(*config_file_paths)
     service = IService(application)
     service.startService()
