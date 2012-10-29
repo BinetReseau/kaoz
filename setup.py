@@ -36,7 +36,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'distribute',
-        'twisted',
+        'irc',
     ],
     scripts=[
         'bin/kaoz',

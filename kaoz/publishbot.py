@@ -2,107 +2,165 @@
 # Copyright © 2011-2012 Binet Réseau
 # See the LICENCE file for more informations
 
-#This file is a part of Kaoz, a free irc notifier
+# This file is a part of Kaoz, a free irc notifier
 
+import irc.client
 import logging
-
-from twisted.words.protocols.irc import IRCClient
-from twisted.protocols.basic import LineReceiver
-from twisted.internet import reactor
+import Queue
+import threading
 
 logger = logging.getLogger(__name__)
 
 
-class Publisher(IRCClient):
+class Publisher(irc.client.SimpleIRCClient):
+    """A basic IRC publisher which sends lines to IRC
+
+    This class uses a Queue to get messages from the outside. It deques the
+    messages into an internal list which containes (channel, message) tuples,
+    waiting to be sent. When the bot joined a channel, it may send waiting
+    messages out, in a relatively slow rate to prevent server spamming.
+    """
+
     def __init__(self, config, *args, **kwargs):
         """Instantiate the publisher based on configuration."""
-        self.nickname = config.get('irc', 'nickname')
-        self.realname = config.get('irc', 'realname')
-        self.username = config.get('irc', 'username')
-        self.password = config.get('irc', 'server_password')
+        super(Publisher, self).__init__()
+        self._server = config.get('irc', 'server')
+        self._port = config.getint('irc', 'port')
+        self._use_ssl = config.getboolean('irc', 'ssl')
+        self._reconn_interval = config.getint('irc', 'reconnection_interval')
+        self._nickname = config.get('irc', 'nickname')
+        self._realname = config.get('irc', 'realname')
+        self._username = config.get('irc', 'username')
+        self._password = config.get('irc', 'server_password')
+        self._lineRate = 1
+        self._chans = set()
+        self._queue = Queue.Queue()
+        self._messages = list()
 
-        self.erroneousNickFallback = self.nickname + '_'
-        self.lineRate = 1
-        self.chans = set()
-        # Twisted still uses old-style classes, 10 years later. Sigh.
-        # And the parent has no __init__, yay.
+    def _connect(self):
+        """Connect to a server"""
+        try:
+            logger.info(u"connecting to %s..." % self._server)
+            self.connect(self._server, self._port, self._nickname,
+                         password=self._password,
+                         ircname=self._realname,
+                         ssl=self._use_ssl)
+        except irc.client.ServerConnectionError:
+            pass
 
-    def connectionMade(self):
+    def _connected_checker(self):
+        """Force reconnection periodically"""
+        if not self.connection.is_connected():
+            self.connection.execute_delayed(self._reconn_interval,
+                                            self._connected_checker)
+            self._connect()
+
+    def on_welcome(self, connection, event):
         """Handler for post-connection event.
 
         Send all queued messages.
         """
-        logger.info(u"connection made to %s", self.transport)
-        self.factory.connection = self
-        # Twisted still uses old-style classes, 10 years later. Sigh.
-        IRCClient.connectionMade(self)
+        logger.info(u"connection made to %s", event.source())
 
-        while self.factory.queue:
-            channel, message = self.factory.queue.popleft()
-            self.send(channel, message)
+    def on_disconnect(self, connection, event):
+        """On disconnect, reconnect !"""
+        self._chans = set()
+        self.connection.execute_delayed(self.reconn_interval,
+                                        self._connected_checker)
+
+    def on_join(self, connection, event):
+        """Join a new channel, say what we need"""
+        # Check message is for me
+        nick = event.source().nick
+        if nick != connection.get_nickname():
+            return
+        channel = event.target()
+        logger.info(u"Joined channel %s" % channel)
+        self._chans.add(channel)
+
+    def on_kick(self, connection, event):
+        """Kicked from a channel"""
+        nick = event.arguments()[0]
+        if nick != connection.get_nickname():
+            return
+        channel = event.target()
+        kicker = event.source()
+        logger.info(u"kicked from channel %s by %s" % (channel, kicker))
+        self.connection.notice(kicker,
+                               u"That was mean, I'm just a bot you know")
+        self._chans.remove(channel)
+
+    def on_part(self, connection, event):
+        """Parted from a channel"""
+        nick = event.arguments()[0]
+        if nick != connection.get_nickname():
+            return
+        channel = event.target()
+        logger.info("parted from channel %s" % channel)
+        self._chans.remove(channel)
+
+    def on_privmsg(self, connection, event):
+        """Answer to a user privmsg and die on demand"""
+        self.connection.privmsg(event.source().nick,
+                                u"I'm a bot, hence I will never answer")
 
     def send(self, channel, message):
-        """Send a message to a channel. Will join the channel before talking."""
-        if channel not in self.chans:
-            self.join(channel)
-        self.say(channel, message)
-    
-    def privmsg(self, user, channel, message):
-        """Answer to a user privmsg."""
-        if channel == self.nickname:
-            self.notice(user.split('!')[0], "I'm a bot, hence I will never answer")
+        """Send a message to a channel. Join the channel before talking."""
+        self._queue.put((channel, message))
 
-    def kickedFrom(self, channel, kicker, message):
-        """Handler for kicks. Will join the channel back after 10 seconds."""
-        self.notice(kicker, "That was mean, I'm just a bot you know");
-    	reactor.callLater(10, self.join, channel)
-        self.chans.remove(channel);
-        # Twisted still uses old-style classes, 10 years later. Sigh.
-        IRCClient.kickedFrom(self, channel, kicker, message)
+    def _say_messages(self):
+        """Try to send as much waiting messages as possible"""
+        # Dequeue everything
+        while not self._queue.empty():
+            (channel, message) = self._queue.get()
+            self._messages.append((channel, message))
 
-    def nickChanged(self, nick):
-        """Will try to return to initial nick after 10 and 300 seconds."""
-        # Twisted still uses old-style classes, 10 years later. Sigh.
-        IRCClient.nickChanged(self, nick)
-        reactor.callLater(10, self.setNick, self.nickname)
-        reactor.callLater(300, self.setNick, self.nickname)
+        # If we're disconnected, don't do anything
+        # just wait for reconnection
+        if self._messages and self.connection.is_connected():
+            (channel, message) = self._messages[0]
+            if irc.client.is_channel(channel) and not channel in self._chans:
+                # Need to join the channel first
+                self.connection.join(channel)
+            else:
+                # Say and unqueue
+                self._messages = self._messages[1:]
+                logger.info("[%s] say %s" % (channel, message))
+                self.connection.privmsg(channel, message)
 
-    def irc_ERR_NICKNAMEINUSE(self, prefix, params):
-        """If the chosen nickname is currently in use."""
-        reactor.callLater(3000, self.setNick, self.nickname)
+        # Infinite loop
+        self.connection.execute_delayed(self._lineRate, self._say_messages)
 
-    def joined(self, channel):
-        """Upon joining a channel"""
-        # Twisted still uses old-style classes, 10 years later. Sigh.
-        IRCClient.joined(self, channel)
-        self.chans.add(channel);
+    def run(self):
+        """Infinite loop of message processing
+        """
+        self._say_messages()
+        self._connect()
+        import time
+        time.sleep(1)
+        self.start()
 
 
-class Listener(LineReceiver):
-    def __init__(self, config):
-        self.delimiter='\n'
-        self.expected_password = config.get('listener', 'password')
+class PublisherThread(threading.Thread):
+    """Thread to manage a Publisher"""
 
-    def connectionMade(self):
-        """When a client connects"""
-        logger.info(u"Connection made: %s", self.transport)
+    def __init__(self, config, *args, **kwargs):
+        self._publisher = Publisher(config, *args, **kwargs)
+        super(PublisherThread, self).__init__(target=self._publisher.run)
+        self._expected_password = config.get('listener', 'password')
 
-    def lineReceived(self, line):
-        """When a line is received."""
-        logger.debug(u"Printing message: %s", line)
+    def send(self, channel, message):
+        self._publisher.send(channel, message)
+
+    def send_line(self, line):
+        """Process a line which contains password:channel:message"""
         line_parts = line.split(':', 2)
         if len(line_parts) != 3:
             logger.warning("Invalid message: %s", line)
             return
 
-        password, channel, message = line.split(':', 2)
-        if password != self.expected_password:
+        password, channel, message = line_parts
+        if password != self._expected_password:
             logger.warning(u"Invalid password %s on line %s", password, line)
             return
-
-        if self.factory.publisher.connection:
-            logger.debug(u"Sending message to %s: %s", channel, message)
-            self.factory.publisher.connection.send(channel, message)
-        else:
-            logger.debug(u"Queuing message to %s: %s", channel, message)
-            self.factory.publisher.queue.append((channel, message))
+        self.send(channel, message)
