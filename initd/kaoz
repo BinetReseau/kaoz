@@ -1,0 +1,21 @@
+#!/sbin/runscript
+# Copyright 1999-2012 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+# $Header: $
+
+depend() {
+    use net
+}
+
+start() {
+    ebegin "Starting Kaoz"
+    start-stop-daemon --start --quiet --background --user nobody --exec /usr/bin/kaoz --pidfile /var/run/kaoz.pid --make-pidfile --
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping Kaoz"
+    start-stop-daemon --stop --exec /usr/bin/kaoz --pidfile /var/run/kaoz.pid
+    eend $?
+}
+

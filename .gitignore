@@ -7,7 +7,6 @@ dist
 build
 eggs
 parts
-bin
 var
 sdist
 develop-eggs
@@ -20,11 +19,14 @@ pip-log.txt
 .coverage
 .tox
 
-#Translations
+# Translations
 *.mo
 
-#Mr Developer
+# Mr Developer
 .mr.developer.cfg
 
-#Self-made-config
+# Self-made-config
 config.py
+
+# Editors
+.*.sw[po]
