@@ -17,6 +17,14 @@ from kaoz import listener
 
 DEFAULT_CONFIG_FILE = '/etc/kaoz.conf'
 
+DEFAULT_CONFIG = {
+    'server_password': '',
+    'ssl': 'false',
+    'ssl_cert': '',
+    'reconnection_interval': '60',
+    'host': '',
+}
+
 
 def main(*config_file_paths):
     # Setup logging
@@ -25,7 +33,7 @@ def main(*config_file_paths):
     root_logger.addHandler(logging.handlers.SysLogHandler('/dev/log'))
 
     # Read configuration
-    config = ConfigParser.SafeConfigParser()
+    config = ConfigParser.SafeConfigParser(DEFAULT_CONFIG)
     config.read(*config_file_paths)
 
     # Start publisher and listener
