@@ -23,22 +23,31 @@ class TCPListenerHandler(SocketServer.BaseRequestHandler):
 
     def setup(self):
         if self.server.use_ssl:
-            real_sock = ssl.wrap_socket(self.request,
-                                        keyfile=self.server.ssl_keyfile,
-                                        certfile=self.server.ssl_certfile,
-                                        server_side=True,
-                                        do_handshake_on_connect=True)
-            real_sock.settimeout(0.5)
+            try:
+                real_sock = ssl.wrap_socket(self.request,
+                                            keyfile=self.server.ssl_keyfile,
+                                            certfile=self.server.ssl_certfile,
+                                            server_side=True,
+                                            do_handshake_on_connect=True)
+                real_sock.settimeout(0.5)
+            except Exception:
+                logger.error(traceback.format_exc().splitlines()[-1])
+                self.rfile = []
+                return
         else:
             real_sock = self.request
         self.rfile = real_sock.makefile('r')
 
     def handle(self):
         for line in self.rfile:
-            line = line.strip()
-            if line:
-                logger.debug(u"Received line %s" % line)
-                self.server.publisher.send_line(line)
+            try:
+                line = line.strip()
+                if line:
+                    logger.debug(u"Received line %s" % line)
+                    self.server.publisher.send_line(line)
+            except UnicodeDecodeError:
+                # Ignore unicode errors
+                logger.warning(traceback.format_exc().splitlines()[-1])
 
 
 class TCPListener(threading.Thread):
@@ -53,7 +62,7 @@ class TCPListener(threading.Thread):
         self._port = config.getint('listener', 'port')
         self._server = SocketServer.TCPServer((self._host, self._port),
             TCPListenerHandler)
-        if config.getboolean('irc', 'ssl'):
+        if config.getboolean('listener', 'ssl'):
             assert has_ssl, "SSL support requested but not available"
             self._server.use_ssl = True
             self._server.ssl_keyfile = config.get('listener', 'ssl_cert')
