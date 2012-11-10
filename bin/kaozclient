@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright © 2011-2012 Binet Réseau
+# See the LICENCE file for more informations
+
+
+"""Main start point for Kaoz."""
+
+import sys
+
+from kaoz import client
+
+if __name__ == '__main__':
+    client.main()
