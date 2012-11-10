@@ -31,7 +31,8 @@ DEFAULT_CONFIG = {
 
 def main(*config_file_paths):
     # Setup logging
-    log_handler = logging.handlers.SysLogHandler('/dev/log')
+    log_handler = logging.handlers.SysLogHandler('/dev/log',
+        facility=logging.handlers.SysLogHandler.LOG_DAEMON)
     log_handler.setFormatter(logging.Formatter(('kaoz[%d]: ' % os.getpid()) +
         '[%(levelname)s] %(name)s: %(message)s'))
     root_logger = logging.getLogger()
