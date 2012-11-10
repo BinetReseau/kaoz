@@ -9,6 +9,7 @@ import ConfigParser
 import logging
 import logging.handlers
 import optparse
+import os
 
 import kaoz
 from kaoz import publishbot
@@ -28,9 +29,12 @@ DEFAULT_CONFIG = {
 
 def main(*config_file_paths):
     # Setup logging
+    log_handler = logging.handlers.SysLogHandler('/dev/log')
+    log_handler.setFormatter(logging.Formatter(('kaoz[%d]: ' % os.getpid()) +
+        '[%(levelname)s] %(name)s: %(message)s'))
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
-    root_logger.addHandler(logging.handlers.SysLogHandler('/dev/log'))
+    root_logger.addHandler(log_handler)
 
     # Read configuration
     config = ConfigParser.SafeConfigParser(DEFAULT_CONFIG)
