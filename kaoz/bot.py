@@ -10,6 +10,8 @@ import logging
 import logging.handlers
 import optparse
 import os
+import sys
+import threading
 
 import kaoz
 from kaoz import publishbot
@@ -40,15 +42,18 @@ def main(*config_file_paths):
     config = ConfigParser.SafeConfigParser(DEFAULT_CONFIG)
     config.read(*config_file_paths)
 
-    # Start publisher and listener
-    publisher = publishbot.PublisherThread(config)
-    tcplistener = listener.TCPListener(publisher, config)
+    # Start publisher and listener as daemon threads
+    event = threading.Event()
+    publisher = publishbot.PublisherThread(config, event=event)
+    publisher.daemon = True
+    tcplistener = listener.TCPListener(publisher, config, event=event)
+    tcplistener.daemon = True
     publisher.start()
     tcplistener.start()
 
-    # Wait everybody to end
-    tcplistener.join()
-    publisher.join()
+    # Wait everybody to end, which means error
+    event.wait()
+    sys.exit(1)
 
 
 def get_config_path(argv):

@@ -7,6 +7,7 @@
 import logging
 import SocketServer
 import threading
+import traceback
 
 try:
     import ssl
@@ -43,7 +44,10 @@ class TCPListenerHandler(SocketServer.BaseRequestHandler):
 class TCPListener(threading.Thread):
     """Thread to manage a TCP server (listener)"""
 
-    def __init__(self, publisher, config):
+    def __init__(self, publisher, config, event=None):
+        """ Initialise a TCP server depending on the configuration and
+        optionally set an event when the thread ends.
+        """
         super(TCPListener, self).__init__()
         self._host = config.get('listener', 'host')
         self._port = config.getint('listener', 'port')
@@ -57,6 +61,13 @@ class TCPListener(threading.Thread):
         else:
             self._server.use_ssl = False
         self._server.publisher = publisher
+        self._event = event
 
     def run(self):
-        self._server.serve_forever()
+        try:
+            self._server.serve_forever()
+        except:
+            logger.critical(traceback.format_exc().splitlines()[-1])
+        finally:
+            if self._event:
+                self._event.set()

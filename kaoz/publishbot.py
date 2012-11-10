@@ -8,6 +8,7 @@ import irc.client
 import logging
 import Queue
 import threading
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -138,16 +139,35 @@ class Publisher(irc.client.SimpleIRCClient):
         self._connect()
         import time
         time.sleep(1)
-        self.start()
+        while True:
+            # Start infinite loop, ignoring UnicodeDecodeError
+            try:
+                self.start()
+                return
+            except UnicodeDecodeError:
+                pass
 
 
 class PublisherThread(threading.Thread):
     """Thread to manage a Publisher"""
 
-    def __init__(self, config, *args, **kwargs):
+    def __init__(self, config, event=None, *args, **kwargs):
+        """ Initialise a publisher depending on the configuration and
+        optionally set an event when the thread ends.
+        """
         self._publisher = Publisher(config, *args, **kwargs)
-        super(PublisherThread, self).__init__(target=self._publisher.run)
+        super(PublisherThread, self).__init__()
         self._expected_password = config.get('listener', 'password')
+        self._event = event
+
+    def run(self):
+        try:
+            self._publisher.run()
+        except:
+            logger.critical(traceback.format_exc().splitlines()[-1])
+        finally:
+            if self._event:
+                self._event.set()
 
     def send(self, channel, message):
         self._publisher.send(channel, message)
