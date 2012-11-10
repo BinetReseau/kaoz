@@ -66,7 +66,7 @@ class Publisher(irc.client.SimpleIRCClient):
     def on_disconnect(self, connection, event):
         """On disconnect, reconnect !"""
         self._chans = set()
-        self.connection.execute_delayed(self.reconn_interval,
+        self.connection.execute_delayed(self._reconn_interval,
                                         self._connected_checker)
 
     def on_join(self, connection, event):
