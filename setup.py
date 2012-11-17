@@ -40,11 +40,11 @@ setup(
     ],
     scripts=[
         'bin/kaoz',
+        'bin/kaozclient',
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: No Input/Output (Daemon)",
-        "Framework :: Twisted",
         "Intended Audience :: System Administrators",
         "License :: OSI Approved :: MIT License",
         "Topic :: Communications :: Chat :: Internet Relay Chat",
