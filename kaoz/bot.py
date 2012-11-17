@@ -26,6 +26,7 @@ DEFAULT_CONFIG = {
     'ssl_cert': '',
     'reconnection_interval': '60',
     'host': '',
+    'line_sleep': 1,
 }
 
 

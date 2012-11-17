@@ -33,7 +33,7 @@ class Publisher(irc.client.SimpleIRCClient):
         self._realname = config.get('irc', 'realname')
         self._username = config.get('irc', 'username')
         self._password = config.get('irc', 'server_password')
-        self._lineRate = 1
+        self._line_sleep = config.getint('irc', 'line_sleep')
         self._chans = set()
         self._queue = Queue.Queue()
         self._messages = list()
@@ -130,7 +130,7 @@ class Publisher(irc.client.SimpleIRCClient):
                 self.connection.privmsg(channel, message)
 
         # Infinite loop
-        self.connection.execute_delayed(self._lineRate, self._say_messages)
+        self.connection.execute_delayed(self._line_sleep, self._say_messages)
 
     def run(self):
         """Infinite loop of message processing
