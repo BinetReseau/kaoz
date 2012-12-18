@@ -5,10 +5,17 @@
 # This file is a part of Kaoz, a free irc notifier
 
 import irc.client
+import irc.connection
 import logging
 import Queue
 import threading
 import traceback
+
+try:
+    import ssl
+    has_ssl = True
+except ImportError:
+    has_ssl = False
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +49,15 @@ class Publisher(irc.client.SimpleIRCClient):
         """Connect to a server"""
         try:
             logger.info(u"connecting to %s..." % self._server)
+            if self._use_ssl:
+                assert has_ssl, "SSL support requested but not available"
+                conn_factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
+            else:
+                conn_factory = irc.connection.Factory()
             self.connect(self._server, self._port, self._nickname,
                          password=self._password,
                          ircname=self._realname,
-                         ssl=self._use_ssl)
+                         connect_factory=conn_factory)
         except irc.client.ServerConnectionError:
             pass
 
