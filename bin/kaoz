@@ -11,5 +11,4 @@ import sys
 from kaoz import bot
 
 if __name__ == '__main__':
-    config_file = bot.get_config_path(sys.argv)
-    bot.main(config_file)
+    bot.main(sys.argv)

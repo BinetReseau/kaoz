@@ -30,19 +30,35 @@ DEFAULT_CONFIG = {
 }
 
 
-def main(*config_file_paths):
+def main(argv):
+    """Start bot threads"""
+    # Parse command line
+    parser = optparse.OptionParser(
+        usage="usage: %prog [options]",
+        version="%prog " + kaoz.__version__)
+    parser.add_option('-c', '--config', action='store', dest='config',
+        help=u"Read configuration from CONFIG", metavar="CONFIG",
+        default=DEFAULT_CONFIG_FILE)
+    parser.add_option('-l', '--logstd', action='store_true', dest='logstd',
+        help="Log messages to standard channel", default=False)
+
+    opts, argv = parser.parse_args(argv)
+
     # Setup logging
-    log_handler = logging.handlers.SysLogHandler('/dev/log',
-        facility=logging.handlers.SysLogHandler.LOG_DAEMON)
-    log_handler.setFormatter(logging.Formatter(('kaoz[%d]: ' % os.getpid()) +
-        '[%(levelname)s] %(name)s: %(message)s'))
-    root_logger = logging.getLogger()
-    root_logger.setLevel(logging.INFO)
-    root_logger.addHandler(log_handler)
+    if opts.logstd:
+        logging.basicConfig(level=logging.INFO)
+    else:
+        log_handler = logging.handlers.SysLogHandler('/dev/log',
+            facility=logging.handlers.SysLogHandler.LOG_DAEMON)
+        log_handler.setFormatter(logging.Formatter(('kaoz[%d]: ' % os.getpid())
+            + '[%(levelname)s] %(name)s: %(message)s'))
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+        root_logger.addHandler(log_handler)
 
     # Read configuration
     config = ConfigParser.SafeConfigParser(DEFAULT_CONFIG)
-    config.read(*config_file_paths)
+    config.read(opts.config)
 
     # Start publisher and listener as daemon threads
     event = threading.Event()
@@ -56,16 +72,3 @@ def main(*config_file_paths):
     # Wait everybody to end, which means error
     event.wait()
     sys.exit(1)
-
-
-def get_config_path(argv):
-    """Find the file to the right config file."""
-    parser = optparse.OptionParser(
-        usage="usage: %prog [options]",
-        version="%prog " + kaoz.__version__)
-    parser.add_option('-c', '--config', action='store', dest='config',
-        help=u"Read configuration from CONFIG", metavar="CONFIG",
-        default=DEFAULT_CONFIG_FILE)
-
-    opts, argv = parser.parse_args(argv)
-    return opts.config
