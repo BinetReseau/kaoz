@@ -39,21 +39,24 @@ def main(argv):
     parser.add_option('-c', '--config', action='store', dest='config',
         help=u"Read configuration from CONFIG", metavar="CONFIG",
         default=DEFAULT_CONFIG_FILE)
+    parser.add_option('-d', '--debug', action='store_true', dest='debug',
+        help="log debug messages", default=False)
     parser.add_option('-l', '--logstd', action='store_true', dest='logstd',
         help="Log messages to standard channel", default=False)
 
     opts, argv = parser.parse_args(argv)
 
     # Setup logging
+    loglevel = logging.DEBUG if opts.debug else logging.INFO
     if opts.logstd:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=loglevel)
     else:
         log_handler = logging.handlers.SysLogHandler('/dev/log',
             facility=logging.handlers.SysLogHandler.LOG_DAEMON)
         log_handler.setFormatter(logging.Formatter(('kaoz[%d]: ' % os.getpid())
             + '[%(levelname)s] %(name)s: %(message)s'))
         root_logger = logging.getLogger()
-        root_logger.setLevel(logging.INFO)
+        root_logger.setLevel(loglevel)
         root_logger.addHandler(log_handler)
 
     # Read configuration
