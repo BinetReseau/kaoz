@@ -73,7 +73,7 @@ class Publisher(irc.client.SimpleIRCClient):
 
         Send all queued messages.
         """
-        logger.info(u"connection made to %s", event.source())
+        logger.info(u"connection made to %s", event.source)
 
     def on_disconnect(self, connection, event):
         """On disconnect, reconnect !"""
@@ -84,20 +84,20 @@ class Publisher(irc.client.SimpleIRCClient):
     def on_join(self, connection, event):
         """Join a new channel, say what we need"""
         # Check message is for me
-        nick = event.source().nick
+        nick = event.source.nick
         if nick != connection.get_nickname():
             return
-        channel = event.target()
+        channel = event.target
         logger.info(u"Joined channel %s" % channel)
         self._chans.add(channel)
 
     def on_kick(self, connection, event):
         """Kicked from a channel"""
-        nick = event.arguments()[0]
+        nick = event.arguments[0]
         if nick != connection.get_nickname():
             return
-        channel = event.target()
-        kicker = event.source()
+        channel = event.target
+        kicker = event.source
         logger.info(u"kicked from channel %s by %s" % (channel, kicker))
         self.connection.notice(kicker,
                                u"That was mean, I'm just a bot you know")
@@ -105,16 +105,16 @@ class Publisher(irc.client.SimpleIRCClient):
 
     def on_part(self, connection, event):
         """Parted from a channel"""
-        nick = event.arguments()[0]
+        nick = event.arguments[0]
         if nick != connection.get_nickname():
             return
-        channel = event.target()
+        channel = event.target
         logger.info("parted from channel %s" % channel)
         self._chans.remove(channel)
 
     def on_privmsg(self, connection, event):
         """Answer to a user privmsg and die on demand"""
-        self.connection.privmsg(event.source().nick,
+        self.connection.privmsg(event.source.nick,
                                 u"I'm a bot, hence I will never answer")
 
     def send(self, channel, message):
