@@ -65,7 +65,8 @@ def main(argv):
 
     # Start publisher and listener as daemon threads
     event = threading.Event()
-    publisher = publishbot.PublisherThread(config, event=event)
+    publisher = publishbot.PublisherThread(config, event=event,
+        debug=opts.debug)
     publisher.daemon = True
     tcplistener = listener.TCPListener(publisher, config, event=event)
     tcplistener.daemon = True

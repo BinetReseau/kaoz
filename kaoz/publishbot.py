@@ -163,7 +163,7 @@ class Publisher(irc.client.SimpleIRCClient):
 class PublisherThread(threading.Thread):
     """Thread to manage a Publisher"""
 
-    def __init__(self, config, event=None, *args, **kwargs):
+    def __init__(self, config, event=None, debug=False, *args, **kwargs):
         """ Initialise a publisher depending on the configuration and
         optionally set an event when the thread ends.
         """
@@ -171,12 +171,16 @@ class PublisherThread(threading.Thread):
         super(PublisherThread, self).__init__()
         self._expected_password = config.get('listener', 'password')
         self._event = event
+        self._debug = debug
 
     def run(self):
         try:
             self._publisher.run()
         except:
-            logger.critical(traceback.format_exc().splitlines()[-1])
+            if self._debug:
+                logger.critical("Exeption " + traceback.format_exc())
+            else:
+                logger.critical(traceback.format_exc().splitlines()[-1])
         finally:
             if self._event:
                 self._event.set()
