@@ -20,15 +20,15 @@ Dependencies
 ------------
 * python
 * python openssl librairies (if you whish to use SSL)
-* twisted
-* socat (for ircpipe)
+* python irc library
 
 Installation of the server
 --------------------------
 
-First, copy the config (`cp config.example.py config.py`) and edit the config.py file to provide correct values for the IRC Server and the listening socket.
-Then, change starter.sh to reflect the correct installation path of Kaoz.
-Run starter.sh, and enjoy ! You might want to eventually create a init.d script instead, but it shouldn't be hard to figure out.
+First, copy the config (`cp kaoz.example.conf /etc/kaoz.conf`) and edit the kaoz.conf file to provide correct values for the IRC Server and the listening socket.
+The daemon is started with the bin/kaoz program.
+There is a Gentoo init.d file in initd/kaoz for your interest.
+It should be easy to figure out how to adapt this file to your distribution.
 
 Known limitations
 -----------------
