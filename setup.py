@@ -53,5 +53,8 @@ setup(
         'Operating System :: Unix',
         'Programming Language :: Python',
     ],
-#    test_suite='tests',
+    tests_require = [
+        'unittest2',
+    ],
+    test_suite='tests',
 )
