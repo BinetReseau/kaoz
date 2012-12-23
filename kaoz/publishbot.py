@@ -44,29 +44,36 @@ class Publisher(irc.client.SimpleIRCClient):
         self._chans = set()
         self._queue = Queue.Queue()
         self._messages = list()
+        self._connect_lock = threading.Lock()
+        self._has_welcome = False
+        self._stop = threading.Event()
+        self.ircobj.execute_every(self._reconn_interval, self._check_connect)
+        self.ircobj.execute_every(self._line_sleep, self._say_messages)
 
     def connect(self):
         """Connect to a server"""
-        try:
+        with self._connect_lock:
+            if self._stop.is_set() or self.is_connected():
+                # Don't connect if server is stopped or if it is already
+                return
             logger.info(u"connecting to %s:%d..." % (self._server, self._port))
             if self._use_ssl:
                 assert has_ssl, "SSL support requested but not available"
                 conn_factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
             else:
                 conn_factory = irc.connection.Factory()
-            super(Publisher, self).connect(self._server, self._port,
-                                           self._nickname,
-                                           password=self._password,
-                                           ircname=self._realname,
-                                           connect_factory=conn_factory)
-        except irc.client.ServerConnectionError:
-            pass
+            try:
+                super(Publisher, self).connect(self._server, self._port,
+                                               self._nickname,
+                                               password=self._password,
+                                               ircname=self._realname,
+                                               connect_factory=conn_factory)
+            except irc.client.ServerConnectionError:
+                logger.error(u"Error connecting to %s" % self._server)
 
-    def _connected_checker(self):
+    def _check_connect(self):
         """Force reconnection periodically"""
-        if not self.is_connected():
-            self.connection.execute_delayed(self._reconn_interval,
-                                            self._connected_checker)
+        if (not self.is_connected()) and (not self._stop.is_set()):
             self.connect()
 
     def on_welcome(self, connection, event):
@@ -74,14 +81,14 @@ class Publisher(irc.client.SimpleIRCClient):
 
         Send all queued messages.
         """
-        logger.info(u"connection made to %s", event.source)
-        self._connected.set()
+        logger.info(u"connection made to %s" % event.source)
+        self._has_welcome = True
 
     def on_disconnect(self, connection, event):
         """On disconnect, reconnect !"""
+        logger.info(u"disconnect event received")
         self._chans = set()
-        self.connection.execute_delayed(self._reconn_interval,
-                                        self._connected_checker)
+        self._has_welcome = False
 
     def on_join(self, connection, event):
         """Join a new channel, say what we need"""
@@ -130,6 +137,10 @@ class Publisher(irc.client.SimpleIRCClient):
             (channel, message) = self._queue.get()
             self._messages.append((channel, message))
 
+        # Don't do anything if server is stopped
+        if self._stop.is_set():
+            return
+
         # If we're disconnected, don't do anything
         # just wait for reconnection
         if self._messages and self.is_connected():
@@ -143,26 +154,27 @@ class Publisher(irc.client.SimpleIRCClient):
                 logger.info("[%s] say %s" % (channel, message))
                 self.connection.privmsg(channel, message)
 
-        # Infinite loop
-        self.connection.execute_delayed(self._line_sleep, self._say_messages)
-
     def is_connected(self):
         """Tell wether the bot is connected or not"""
-        return self.connection.is_connected()
+        return self.connection.is_connected() and self._has_welcome
 
     def run(self):
         """Infinite loop of message processing"""
-        self._say_messages()
-        self.connect()
-        import time
-        time.sleep(1)
-        while True:
+        # There is a periodic task which checks connection
+        # but don't wait for it to start connection
+        if not self.is_connected():
+            self.connect()
+        while not self._stop.is_set():
             # Start infinite loop, ignoring UnicodeDecodeError
             try:
-                self.start()
-                return
+                self.ircobj.process_once(0.2)
             except UnicodeDecodeError:
                 pass
+
+    def stop(self):
+        """Stop IRC client"""
+        self._stop.set()
+        self.connection.close()
 
 
 class PublisherThread(threading.Thread):
@@ -190,6 +202,11 @@ class PublisherThread(threading.Thread):
             if self._event:
                 self._event.set()
 
+    def stop(self):
+        """Stop publisher and join it"""
+        self._publisher.stop()
+        self.join()
+
     def send(self, channel, message):
         self._publisher.send(channel, message)
 
@@ -205,3 +222,10 @@ class PublisherThread(threading.Thread):
             logger.warning(u"Invalid password %s on line %s", password, line)
             return
         self.send(channel, message)
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop()

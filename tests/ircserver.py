@@ -14,6 +14,7 @@ This server specificly does following things:
 
 import logging
 import optparse
+import Queue
 import re
 import threading
 import SocketServer
@@ -92,9 +93,15 @@ class _IRCServerHandler(SocketServer.StreamRequestHandler):
     def on_privmsg(self, prefix, args):
         """Process received PRIVMSG command"""
         assert(len(args) == 2 and args[0])
-        channel = args[0]
-        message = args[1]
-        logger.info(u"%s says on %s: %s" % (self._nick, channel, message))
+        message = IRCMessage(self._nick, args[0], args[1])
+        logger.info(u"%s says on %s: %s" %
+            (self._nick, message.channel, message.text))
+        self.server.display_queue.put(message)
+
+    def on_quit(self, prefix, args):
+        """Process received QUIT command"""
+        logger.info(u"%s quits" % self._nick)
+        self._quit = True
 
     def command(self, cmd, arg1, arg2, prefix=None):
         """Send a command back to the client"""
@@ -145,6 +152,7 @@ class _IRCServerHandler(SocketServer.StreamRequestHandler):
         self._username = None
         self._fullname = None
         self._chans = dict()
+        self._quit = False
 
         # First message
         self.command('NOTICE', 'AUTH',
@@ -155,14 +163,20 @@ class _IRCServerHandler(SocketServer.StreamRequestHandler):
             if line:
                 logger.debug(u"Received line \"%s\"" % line)
                 self.dispatch_command(line)
+            if self._quit:
+                return
 
 
-class IRCServer(SocketServer.TCPServer):
+class IRCServer(SocketServer.ThreadingTCPServer):
     """Simple IRC server for testing purpose"""
+
+    # Allow reuse of an address, as dirong testing the server is fast restarted
+    allow_reuse_address = True
 
     def __init__(self, address, name):
         """Start an IRC server on give address with the specified name"""
         self.name = name
+        self.display_queue = Queue.Queue()
         logger.info(u"Starting server %s on %s:%d" %
             (name, address[0], address[1]))
         SocketServer.TCPServer.__init__(self, address, _IRCServerHandler)
@@ -177,6 +191,25 @@ class IRCServerThread(threading.Thread):
 
     def run(self):
         self.srv.serve_forever()
+
+    def get_displayed_message(self, timeout):
+        """Get next displayed message, or None if time goes out
+
+        Return an IRCMessage
+        """
+        try:
+            return self.srv.display_queue.get(timeout=timeout)
+        except Queue.Empty:
+            return None
+
+
+class IRCMessage(object):
+    """An IRC message is a (user, channel, text) tuple"""
+
+    def __init__(self, user, channel, text):
+        self.user = user
+        self.channel = channel
+        self.text = text
 
 
 def main(argv):
