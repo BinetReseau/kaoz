@@ -45,28 +45,29 @@ class Publisher(irc.client.SimpleIRCClient):
         self._queue = Queue.Queue()
         self._messages = list()
 
-    def _connect(self):
+    def connect(self):
         """Connect to a server"""
         try:
-            logger.info(u"connecting to %s..." % self._server)
+            logger.info(u"connecting to %s:%d..." % (self._server, self._port))
             if self._use_ssl:
                 assert has_ssl, "SSL support requested but not available"
                 conn_factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
             else:
                 conn_factory = irc.connection.Factory()
-            self.connect(self._server, self._port, self._nickname,
-                         password=self._password,
-                         ircname=self._realname,
-                         connect_factory=conn_factory)
+            super(Publisher, self).connect(self._server, self._port,
+                                           self._nickname,
+                                           password=self._password,
+                                           ircname=self._realname,
+                                           connect_factory=conn_factory)
         except irc.client.ServerConnectionError:
             pass
 
     def _connected_checker(self):
         """Force reconnection periodically"""
-        if not self.connection.is_connected():
+        if not self.is_connected():
             self.connection.execute_delayed(self._reconn_interval,
                                             self._connected_checker)
-            self._connect()
+            self.connect()
 
     def on_welcome(self, connection, event):
         """Handler for post-connection event.
@@ -74,6 +75,7 @@ class Publisher(irc.client.SimpleIRCClient):
         Send all queued messages.
         """
         logger.info(u"connection made to %s", event.source)
+        self._connected.set()
 
     def on_disconnect(self, connection, event):
         """On disconnect, reconnect !"""
@@ -130,7 +132,7 @@ class Publisher(irc.client.SimpleIRCClient):
 
         # If we're disconnected, don't do anything
         # just wait for reconnection
-        if self._messages and self.connection.is_connected():
+        if self._messages and self.is_connected():
             (channel, message) = self._messages[0]
             if irc.client.is_channel(channel) and not channel in self._chans:
                 # Need to join the channel first
@@ -144,11 +146,14 @@ class Publisher(irc.client.SimpleIRCClient):
         # Infinite loop
         self.connection.execute_delayed(self._line_sleep, self._say_messages)
 
+    def is_connected(self):
+        """Tell wether the bot is connected or not"""
+        return self.connection.is_connected()
+
     def run(self):
-        """Infinite loop of message processing
-        """
+        """Infinite loop of message processing"""
         self._say_messages()
-        self._connect()
+        self.connect()
         import time
         time.sleep(1)
         while True:
