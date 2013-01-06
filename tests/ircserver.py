@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 _rfc_1459_command_regexp = re.compile(r'^(:(?P<prefix>[^ ]+) +)?'
     r'(?P<command>[^ ]+)( *(?P<argument> .+))?')
 
-SERVER_VERSION = u"test-ircserver-0.0.1alpaha"
+SERVER_VERSION = u"test-ircserver-0.0.1alpha"
 SERVER_INFO = u"aAbcCdefFghHiIjkKmnoOrRsvwxXy bceiIjklLmMnoOprRstv"
 
 
