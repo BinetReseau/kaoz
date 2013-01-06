@@ -44,13 +44,23 @@ class TCPListenerHandler(SocketServer.BaseRequestHandler):
     def handle(self):
         for line in self.rfile:
             try:
-                line = line.strip()
-                if line:
-                    logger.debug(u"Received line %s" % line)
-                    self.server.publisher.send_line(line)
+                self.publish_line(line)
             except UnicodeDecodeError:
                 # Ignore unicode errors
                 logger.warning(traceback.format_exc().splitlines()[-1])
+
+    def publish_line(self, line):
+        """publish a received line which is prefixed by 'password:'"""
+        line = line.strip()
+        if not line:
+            return
+        expected_prefix = self.server.password + ':'
+        if not line.startswith(expected_prefix):
+            logger.warning(u"Invalid password on line %s" % line)
+            return
+        line = line[len(expected_prefix):]
+        logger.debug(u"Received line %s" % line)
+        self.server.publisher.send_line(line)
 
 
 class TCPListener(threading.Thread):
@@ -66,6 +76,7 @@ class TCPListener(threading.Thread):
         self._server = SocketServer.ThreadingTCPServer(
            (self._host, self._port),
             TCPListenerHandler)
+        self._server.password = config.get('listener', 'password')
         if config.getboolean('listener', 'ssl'):
             assert has_ssl, "SSL support requested but not available"
             self._server.use_ssl = True

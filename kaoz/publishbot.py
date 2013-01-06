@@ -186,7 +186,6 @@ class PublisherThread(threading.Thread):
         """
         self._publisher = Publisher(config, *args, **kwargs)
         super(PublisherThread, self).__init__()
-        self._expected_password = config.get('listener', 'password')
         self._event = event
         self._debug = debug
 
@@ -211,16 +210,13 @@ class PublisherThread(threading.Thread):
         self._publisher.send(channel, message)
 
     def send_line(self, line):
-        """Process a line which contains password:channel:message"""
-        line_parts = line.split(':', 2)
-        if len(line_parts) != 3:
+        """Process a line which contains channel:message"""
+        line_parts = line.split(':', 1)
+        if len(line_parts) != 2:
             logger.warning("Invalid message: %s", line)
             return
 
-        password, channel, message = line_parts
-        if password != self._expected_password:
-            logger.warning(u"Invalid password %s on line %s", password, line)
-            return
+        channel, message = line_parts
         self.send(channel, message)
 
     def __enter__(self):
