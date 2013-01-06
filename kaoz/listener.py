@@ -38,6 +38,9 @@ class TCPListenerHandler(SocketServer.BaseRequestHandler):
             real_sock = self.request
         self.rfile = real_sock.makefile('r')
 
+    def finish(self):
+        self.rfile.close()
+
     def handle(self):
         for line in self.rfile:
             try:
@@ -60,7 +63,8 @@ class TCPListener(threading.Thread):
         super(TCPListener, self).__init__()
         self._host = config.get('listener', 'host')
         self._port = config.getint('listener', 'port')
-        self._server = SocketServer.TCPServer((self._host, self._port),
+        self._server = SocketServer.ThreadingTCPServer(
+           (self._host, self._port),
             TCPListenerHandler)
         if config.getboolean('listener', 'ssl'):
             assert has_ssl, "SSL support requested but not available"
@@ -80,3 +84,15 @@ class TCPListener(threading.Thread):
         finally:
             if self._event:
                 self._event.set()
+
+    def stop(self):
+        """Shut down listener"""
+        self._server.shutdown()
+        self.join()
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop()
