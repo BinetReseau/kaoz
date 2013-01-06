@@ -43,3 +43,10 @@ class PublisherTestCase(unittest.TestCase):
             self.assertFalse(message is None, u"unable to display a message")
             self.assertTrue(message.channel == '#chan1')
             self.assertTrue(message.text == u"Hello, world !")
+
+            # Send a line
+            pub.send_line(u"#chan1:Message on a line: it works")
+            message = self.ircsrv.get_displayed_message(10)
+            self.assertFalse(message is None, u"unable to display a message")
+            self.assertTrue(message.channel == '#chan1')
+            self.assertTrue(message.text == u"Message on a line: it works")
