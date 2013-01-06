@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright © 2011-2012 Binet Réseau
+# Copyright © 2011-2013 Binet Réseau
 # See the LICENCE file for more informations
 
 """Basic IRC server, used for testing purpose only
