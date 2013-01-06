@@ -7,6 +7,8 @@ import kaoz.listener
 import Queue
 import socket
 
+configure_logger(kaoz.listener.logger, 'WARNING')
+
 
 class DummyPublisher(object):
     """Publisher for testing purpose"""
@@ -22,7 +24,6 @@ class DummyPublisher(object):
 class ListenerTestCase(unittest.TestCase):
 
     def setUp(self):
-        configure_logger(kaoz.listener.logger, 'WARNING')
         self.config = get_local_conf()
         self.host = self.config.get('listener', 'host')
         self.port = self.config.getint('listener', 'port')

@@ -6,13 +6,14 @@ from .common import unittest, get_local_conf, spawn_ircserver
 from .common import configure_ircserver_log, configure_logger
 import kaoz.publishbot
 
+configure_ircserver_log('INFO')
+configure_logger(kaoz.publishbot.logger, 'DEBUG')
+
 
 class PublisherTestCase(unittest.TestCase):
 
     def setUp(self):
         self.config = get_local_conf()
-        configure_ircserver_log('INFO')
-        configure_logger(kaoz.publishbot.logger, 'DEBUG')
         self.ircsrv = spawn_ircserver(self.config)
 
     def tearDown(self):
