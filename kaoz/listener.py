@@ -39,7 +39,8 @@ class TCPListenerHandler(SocketServer.BaseRequestHandler):
         self.rfile = real_sock.makefile('r')
 
     def finish(self):
-        self.rfile.close()
+        if type(self.rfile) is not list:
+            self.rfile.close()
 
     def handle(self):
         for line in self.rfile:
@@ -80,7 +81,7 @@ class TCPListener(threading.Thread):
         if config.getboolean('listener', 'ssl'):
             assert has_ssl, "SSL support requested but not available"
             self._server.use_ssl = True
-            self._server.ssl_keyfile = config.get('listener', 'ssl_cert')
+            self._server.ssl_keyfile = config.get('listener', 'ssl_key')
             self._server.ssl_certfile = config.get('listener', 'ssl_cert')
         else:
             self._server.use_ssl = False

@@ -1,0 +1,48 @@
+prompt = no
+
+[ req ]
+default_bits       = 1024
+default_keyfile    = privkey.pem
+distinguished_name = req_distinguished_name
+attributes         = req_attributes
+x509_extensions    = v3_ca    # The extentions to add to the self signed cert
+
+# Passwords for private keys if not present they will be prompted for
+# input_password = secret
+# output_password = secret
+
+# This sets a mask for permitted string types. There are several options.
+# default: PrintableString, T61String, BMPString.
+# pkix     : PrintableString, BMPString (PKIX recommendation after 2004).
+# utf8only: only UTF8Strings (PKIX recommendation after 2004).
+# nombstr : PrintableString, T61String (no BMPStrings or UTF8Strings).
+# MASK:XXXX a literal mask value.
+string_mask = nombstr
+
+# req_extensions = v3_req # The extensions to add to a certificate request
+
+[ req_distinguished_name ]
+C = FR
+ST = Example State
+L = Example Locality
+O = Example Organization
+OU = Example Organization Unit
+CN = localhost
+emailAddress = example@example.com
+
+[ req_attributes ]
+challengePassword = A challenge password
+unstructuredName = An optional company name
+
+[ v3_req ]
+# Extensions to add to a certificate request
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+
+[ v3_ca ]
+# Extensions for a typical CA
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer:always
+basicConstraints = critical,CA:true
+
+
