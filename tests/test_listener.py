@@ -66,11 +66,12 @@ class ListenerTestCase(unittest.TestCase):
             sock.connect((self.host, self.port))
             sock.sendall(u"%s:%s" % (self.password, sent_line))
             sock.close()
-        # Close everything and wait for the publisher to receive the line
-        try:
-            received_line = self.pub.lines.get(timeout=2)
-        except Queue.Empty:
-            self.fail(u"Publisher didn't receive anything")
+
+            # Close everything and wait for the publisher to receive the line
+            try:
+                received_line = self.pub.lines.get(timeout=2)
+            except Queue.Empty:
+                self.fail(u"Publisher didn't receive anything")
         self.assertEquals(received_line, sent_line)
         self.assertTrue(self.pub.lines.empty(), u"Too many published lines")
 
@@ -83,12 +84,12 @@ class ListenerTestCase(unittest.TestCase):
             sock.connect((self.host, self.port))
             sock.sendall(packet)
             sock.close()
-        try:
-            for l in sent_lines:
-                received_line = self.pub.lines.get(timeout=1)
-                self.assertEquals(received_line, l, u"Wrong published line")
-        except Queue.Empty:
-            self.fail(u"Publisher didn't receive enough")
+            try:
+                for l in sent_lines:
+                    rcvd_line = self.pub.lines.get(timeout=2)
+                    self.assertEquals(rcvd_line, l, u"Wrong published line")
+            except Queue.Empty:
+                self.fail(u"Publisher didn't receive enough")
         self.assertTrue(self.pub.lines.empty(), u"Too many published lines")
 
     @unittest.skipUnless(has_ssl, "requires ssl library")
@@ -102,10 +103,11 @@ class ListenerTestCase(unittest.TestCase):
             sock.connect((self.host, self.port))
             sock.sendall(u"%s:%s" % (self.password, sent_line))
             sock.close()
-        # Close everything and wait for the publisher to receive the line
-        try:
-            received_line = self.pub.lines.get(timeout=2)
-        except Queue.Empty:
-            self.fail(u"Publisher didn't receive anything")
+
+            # Close everything and wait for the publisher to receive the line
+            try:
+                received_line = self.pub.lines.get(timeout=2)
+            except Queue.Empty:
+                self.fail(u"Publisher didn't receive anything")
         self.assertEquals(received_line, sent_line)
         self.assertTrue(self.pub.lines.empty(), u"Too many published lines")
