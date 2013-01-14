@@ -7,11 +7,12 @@ General purpose
 ---------------
 
 Kaoz is a free notifier for IRC. It's purpose is to provide an easy to use way for System Administrators to send warnings and logs on any choosen IRC channel.
-It therefore uses a persistent daemon, which is called the 'server' later on,  that will listen on a given port, optionnaly with ssl enabled, and will expect lines to have the format `password:#channel:Message`.
+It therefore uses a persistent daemon, which is called the 'server' later on, that will listen on a given port, optionnaly with ssl enabled.
+The server expects lines to have the format `password:channel:message`, like `secret:#help:Hello`.
 `password` is a global password required to use the service.
-`channel` is an irc channel on the configured network. (Kaoz will join the channel to do so)
-In order to simplify the usage of the daemon, we are providing some of the scripts we found useful for correctly generating messages, thus refered as the 'clients'. This is completly optional, tough.
-Please not that, in case you whish to agregate many servers' notifications, you can have only one Kaoz server, but you should duplicate client scripts.
+`channel` is an irc channel on the configured network. (Kaoz will join the channel to do so).
+A 'client' is an application which connects to the server to send messages on IRC.
+Please note that, in case you whish to agregate many servers' notifications, you may have only one Kaoz server, but you should multiply clients.
 
 Licence
 -------
@@ -27,9 +28,10 @@ Dependencies
 Installation of the server
 --------------------------
 
-First, copy the config (`cp kaoz.example.conf /etc/kaoz.conf`) and edit the kaoz.conf file to provide correct values for the IRC Server and the listening socket.
-The daemon is started with the bin/kaoz program.
-There is a Gentoo init.d file in initd/kaoz for your interest.
+First, copy the config to the location of your choice, for example `/etc/kaoz.conf`.
+Then edit the `kaoz.conf` file to provide correct values for the IRC Server and the listening socket.
+The daemon is started with the `bin/kaoz` program.
+There is a Gentoo `init.d` file in `initd/kaoz` for your interest.
 It should be easy to figure out how to adapt this file to your distribution.
 
 Known limitations
@@ -37,6 +39,46 @@ Known limitations
 
 * Kaoz does not support key-protected channels
 * Kaoz does not check messages for oversized lines therefore, long lines may be cut by the IRC server.
+
+Kaoz client examples
+-------------------
+
+Here are some ways to send `Hello` to channel `#help` using a Kaoz server which is listenning on host `myhost` port `4242`, protected with password `secret`.
+For that purpose, a client needs to send `secret:#help:Hello` to the server (with an optional LF or CR+LF, as you want).
+
+*   In Shell, for simple servers without SSL, use one of the following lines:
+
+        echo "secret:#help:Hello" |netcat myhost 4242
+        echo "secret:#help:Hello" |socat - TCP:myhost:4242
+
+*   In Shell, for servers which use SSL certificates
+
+        echo "secret:#help:Hello" |socat - OPENSSL:myhost:4242
+
+*   In Shell, for servers which use SSL certificates and a trusted authority certificate file (CA file)
+
+        echo "secret:#help:Hello" |socat - OPENSSL:myhost:4242,verify,cafile=myca.crt
+
+*   In Python without SSL:
+
+        import socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect(('myhost', 4242))
+        sock.sendall('%s:%s:%s' % ('secret', '#help', 'Hello'))
+        sock.close()
+
+*   In Python with SSL:
+
+        import socket
+        import ssl
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect(('myhost', 4242))
+        # use these options to check CA: cert_reqs=ssl.CERT_REQUIRED, certfile='myca.crt'
+        sock = ssl.wrap_socket(self.sock)
+        sock.sendall('%s:%s:%s' % ('secret', '#help', 'Hello'))
+        sock.close()
+
+Kaoz server support multi-lined messages, so long as each lines begins with the password and a channel.
 
 Installing clients
 ------------------
@@ -53,6 +95,38 @@ Here is a quick overview of the features :
 <dt>pam</dt>
 <dd>The login, rooting and fallback scripts can be use with a matching pam.d config to log login, su/sudo, or a special event (here, it is called by pam in case there is a problem with our physical token authentification server, but it could be anything you want to log). You will find a working sample configuration in the etc-pam.d subdirectory. However, it should be adapted to fit your specific pam.d.</dd>
 </dl>
+
+About IRC style and colors
+-------------------------
+
+Some control sequences allow IRC users to write messages with style and colors (`^X` means `Ctrl+X`):
+
+* `^B` (= x02) Bold text
+* `^C` (= x03) Colored text
+* `^O` (= x0F) Back to original plain text
+* `^R` (= x16) Reversed text
+* `^_` (= x1F) Underlined text
+
+There are 16 colors:
+
+1. Black
+2. Navy Blue
+3. Green
+4. Red
+5. Brown
+6. Purple
+7. Olive
+8. Yellow
+9. Lime Green
+10. Teal
+11. Aqua Light
+12. Royal Blue
+13. Hot Pink
+14. Dark Gray
+15. Light Gray
+16. White
+
+For example `^C2Hello` writes Hello in blue.
 
 Contact
 -------
