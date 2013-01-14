@@ -43,12 +43,15 @@ class TCPListenerHandler(SocketServer.BaseRequestHandler):
             self.rfile.close()
 
     def handle(self):
+        client_addr = '%s:%d' % self.client_address
+        logger.debug(u"Client connected from %s" % client_addr)
         for line in self.rfile:
             try:
                 self.publish_line(line)
             except UnicodeDecodeError:
                 # Ignore unicode errors
                 logger.warning(traceback.format_exc().splitlines()[-1])
+        logger.debug(u"Client disconnected from %s" % client_addr)
 
     def publish_line(self, line):
         """publish a received line which is prefixed by 'password:'"""
@@ -90,16 +93,19 @@ class TCPListener(threading.Thread):
 
     def run(self):
         try:
+            logger.debug(u"Server runs")
             self._server.serve_forever()
         except:
             logger.critical(traceback.format_exc().splitlines()[-1])
         finally:
+            logger.debug(u"Server has been shut down")
             if self._event:
                 self._event.set()
 
     def stop(self):
         """Shut down listener"""
         self._server.shutdown()
+        self._server.server_close()
         self.join()
 
     def __enter__(self):
