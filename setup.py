@@ -4,6 +4,7 @@
 from setuptools import setup, find_packages
 import os
 import re
+import sys
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -42,6 +43,11 @@ setup(
         'bin/kaoz',
         'bin/kaozclient',
     ],
+    data_files=[
+        ('kaoz/tests', ['kaoz/tests/kaoz.local.conf', ]),
+        ('kaoz/tests/ssl', ['kaoz/tests/ssl/kaoz-example.key',
+                            'kaoz/tests/ssl/kaoz-example.crt']),
+    ],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: No Input/Output (Daemon)',
@@ -52,9 +58,10 @@ setup(
         'Topic :: System :: Monitoring',
         'Operating System :: Unix',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
     ],
-    tests_require = [
-        'unittest2',
-    ],
-    test_suite='tests',
+    tests_require = ['unittest2'] if sys.version_info < (3, ) else [],
+    test_suite='kaoz.tests',
+    use_2to3=True,
+    include_package_data=True,
 )
