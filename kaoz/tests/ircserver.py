@@ -34,6 +34,7 @@ class _IRCServerHandler(SocketServer.StreamRequestHandler):
 
     def parse_command(self, line):
         """Parse next line sent by the client"""
+        line = line.decode('UTF-8')
         m = _rfc_1459_command_regexp.match(line)
         if not m:
             raise IOError(u"Received invalid line: %s" % line)
@@ -110,7 +111,14 @@ class _IRCServerHandler(SocketServer.StreamRequestHandler):
             (cmd if type(cmd) is str else u"%03d" % cmd),
             (u" " + arg1 if arg1 else u""),
             (u" :" + arg2 if arg2 else u""))
-        self.wfile.write(line + u"\r\n")
+        try:
+            self.wfile.write((line + u"\r\n").encode('UTF-8'))
+        except IOError:
+            # May be BrokenPipeError
+            if not self._quit:
+                self._quit = True
+                logger.info(u"IOError, %s quits" % self._nick)
+            pass
 
     def do_names(self, channel):
         """Send nicks of users on the specified channel"""

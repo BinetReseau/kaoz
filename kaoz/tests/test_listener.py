@@ -64,7 +64,8 @@ class ListenerTestCase(unittest.TestCase):
             # Send one line
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((self.host, self.port))
-            sock.sendall(u"%s:%s" % (self.password, sent_line))
+            packet = u"%s:%s" % (self.password, sent_line)
+            sock.sendall(packet.encode('UTF-8'))
             sock.close()
 
             # Close everything and wait for the publisher to receive the line
@@ -82,7 +83,7 @@ class ListenerTestCase(unittest.TestCase):
         with kaoz.listener.TCPListener(self.pub, self.config):
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((self.host, self.port))
-            sock.sendall(packet)
+            sock.sendall(packet.encode('UTF-8'))
             sock.close()
             try:
                 for l in sent_lines:
@@ -101,7 +102,8 @@ class ListenerTestCase(unittest.TestCase):
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock = ssl.wrap_socket(sock)
             sock.connect((self.host, self.port))
-            sock.sendall(u"%s:%s" % (self.password, sent_line))
+            packet = u"%s:%s" % (self.password, sent_line)
+            sock.sendall(packet.encode('UTF-8'))
             sock.close()
 
             # Close everything and wait for the publisher to receive the line
