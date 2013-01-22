@@ -17,8 +17,7 @@ class PublisherTestCase(unittest.TestCase):
         self.ircsrv = spawn_ircserver(self.config)
 
     def tearDown(self):
-        self.ircsrv.srv.shutdown()
-        self.ircsrv.join()
+        self.ircsrv.stop()
         del self.ircsrv
 
     def test_welcome(self):

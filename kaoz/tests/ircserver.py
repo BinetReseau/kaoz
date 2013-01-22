@@ -200,6 +200,12 @@ class IRCServerThread(threading.Thread):
     def run(self):
         self.srv.serve_forever()
 
+    def stop(self):
+        """Shut down server"""
+        self.srv.shutdown()
+        self.srv.server_close()
+        self.join()
+
     def get_displayed_message(self, timeout):
         """Get next displayed message, or None if time goes out
 
