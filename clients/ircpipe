@@ -15,7 +15,7 @@ DEFAULT_CHANNEL='#default-channel'
 # Send the real message
 if [ $# -ne 1 ]
 then
-    CHANNEL="$CHANNEL"
+    CHANNEL="$DEFAULT_CHANNEL"
 else
     CHANNEL="$1"
 fi
