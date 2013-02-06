@@ -45,8 +45,8 @@ setup(
     ],
     data_files=[
         ('kaoz/tests', ['kaoz/tests/kaoz.local.conf', ]),
-        ('kaoz/tests/ssl', ['kaoz/tests/ssl/kaoz-example.key',
-                            'kaoz/tests/ssl/kaoz-example.crt']),
+        ('kaoz/tests/certs', ['kaoz/tests/certs/kaoz-example.key',
+                              'kaoz/tests/certs/kaoz-example.crt']),
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

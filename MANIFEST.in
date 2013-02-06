@@ -1,3 +1,3 @@
 include kaoz/tests/kaoz.local.conf
-include kaoz/tests/ssl/kaoz-example.crt
-include kaoz/tests/ssl/kaoz-example.key
+include kaoz/tests/certs/kaoz-example.crt
+include kaoz/tests/certs/kaoz-example.key
