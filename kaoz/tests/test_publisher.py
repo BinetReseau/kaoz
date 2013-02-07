@@ -50,3 +50,18 @@ class PublisherTestCase(unittest.TestCase):
             self.assertFalse(message is None, u"unable to display a message")
             self.assertTrue(message.channel == '#chan1')
             self.assertTrue(message.text == u"Message on a line: it works")
+
+    def test_unjoinable_chan(self):
+        private_message = u"Message for a chan the bot can't join"
+        public_message = u"Message for a chan where the bot is allowed"
+        with kaoz.publishbot.PublisherThread(self.config) as pub:
+            pub.send('#unjoinable-chan', private_message)
+            pub.send('#public-chan', public_message)
+            message = self.ircsrv.get_displayed_message(10)
+            self.assertFalse(message is None, u"unable to display a message")
+            self.assertTrue(message.channel != '#unjoinable-chan',
+                            u"unjoinable channel got joinned")
+            self.assertTrue(message.text != private_message,
+                            u"private message got published")
+            self.assertTrue(message.channel == '#public-chan')
+            self.assertTrue(message.text == public_message)

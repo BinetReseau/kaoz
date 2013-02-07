@@ -75,6 +75,10 @@ class _IRCServerHandler(SocketServer.StreamRequestHandler):
         """Process received JOIN command"""
         assert(len(args) >= 1 and args[0])
         channel = args[0]
+        if channel.startswith(u'#unjoinable'):
+            logger.info(u"%s tried to join unjoinable channel %s" %
+                (self._nick, channel))
+            return
         if not channel in self._chans:
             logger.info(u"Create channel %s with user %s" %
                 (channel, self._nick))
