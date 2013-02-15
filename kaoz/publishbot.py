@@ -11,6 +11,8 @@ import Queue
 import threading
 import traceback
 
+import kaoz.channel
+
 try:
     import ssl
     has_ssl = True
@@ -18,67 +20,6 @@ except ImportError:
     has_ssl = False
 
 logger = logging.getLogger(__name__)
-
-
-class ChanStatus(object):
-    """A simple structure which holds information about a channel
-
-    Note that this structure is not thread-safe. It must only be manipulated
-    from Publisher functions.
-    """
-
-    def __init__(self, name):
-        self.name = name
-        self.is_joined = False
-        self.join_attemps = 0
-        self.messages = list()
-
-
-class IndexedChanDict(dict):
-    """Dictionary of ChanStatus with an index.
-
-    The index is used when saying messages on IRC, to remember the next channel
-    to take into account.
-    """
-
-    def __init__(self):
-        # channel name => ChanStatus mapping
-        super(IndexedChanDict, self).__init__()
-        # Ordered channel names, to be used when running a loop
-        self._list = list()
-
-    def __getitem__(self, channel):
-        """Get a ChanStatus or create a new one if it does not exist"""
-        if channel not in self:
-            self[channel] = ChanStatus(channel)
-        return super(IndexedChanDict, self).__getitem__(channel)
-
-    def __setitem__(self, channel, status):
-        """Set a specific ChanStatus"""
-        if channel not in self:
-            self._list.append(channel)
-        return super(IndexedChanDict, self).__setitem__(channel, status)
-
-    def __delitem__(self, channel):
-        """Delete a channel status"""
-        super(IndexedChanDict, self).__delitem__(channel)
-        self._list.remove(channel)
-
-    def leave(self, channel):
-        """Remove given channel due to a kick or a part"""
-        if channel not in self:
-            return
-        self[channel].is_joined = False
-        if not self[channel].messages:
-            del self[channel]
-
-    def find_waiting_channel(self):
-        """Find a channel which has messages waiting to be sent, or None"""
-        for (i, channel) in enumerate(self._list):
-            if self[channel].messages:
-                self._list = self._list[(i+1):] + self._list[0:i+1]
-                return self[channel]
-        return None
 
 
 class Publisher(irc.client.SimpleIRCClient):
@@ -102,7 +43,7 @@ class Publisher(irc.client.SimpleIRCClient):
         self._username = config.get('irc', 'username')
         self._password = config.get('irc', 'server_password')
         self._line_sleep = config.getint('irc', 'line_sleep')
-        self._chans = IndexedChanDict()
+        self._chans = kaoz.channel.IndexedChanDict()
         self._queue = Queue.Queue()
         self._connect_lock = threading.Lock()
         self._has_welcome = False
@@ -147,8 +88,7 @@ class Publisher(irc.client.SimpleIRCClient):
     def on_disconnect(self, connection, event):
         """On disconnect, reconnect !"""
         logger.info(u"disconnect event received")
-        for chan in list(self._chans):
-            self._chans.leave(chan)
+        self._chans.leave_all()
         self._has_welcome = False
 
     def on_join(self, connection, event):
@@ -159,7 +99,7 @@ class Publisher(irc.client.SimpleIRCClient):
             return
         channel = event.target
         logger.info(u"Joined channel %s" % channel)
-        self._chans[channel].is_joined = True
+        self._chans[channel].mark_joined()
 
     def on_kick(self, connection, event):
         """Kicked from a channel"""
@@ -171,8 +111,7 @@ class Publisher(irc.client.SimpleIRCClient):
         logger.info(u"kicked from channel %s by %s" % (channel, kicker))
         self.connection.notice(kicker,
                                u"That was mean, I'm just a bot you know")
-        if channel in self._chans:
-            del self._chans[channel]
+        self._chans.leave(channel)
 
     def on_part(self, connection, event):
         """Parted from a channel"""
@@ -181,8 +120,7 @@ class Publisher(irc.client.SimpleIRCClient):
             return
         channel = event.target
         logger.info("parted from channel %s" % channel)
-        if channel in self._chans:
-            del self._chans[channel]
+        self._chans.leave(channel)
 
     def on_privmsg(self, connection, event):
         """Answer to a user privmsg and die on demand"""
@@ -217,18 +155,18 @@ class Publisher(irc.client.SimpleIRCClient):
 
         # Find the next channel which needs work
         chanstatus = self._chans.find_waiting_channel()
-        channel = chanstatus.name
+        if chanstatus is None:
+            return
 
         # Join the channel if needed
-        if irc.client.is_channel(channel) and not chanstatus.is_joined:
-            self.connection.join(channel)
-            chanstatus.join_attemps = chanstatus.join_attemps + 1
+        if chanstatus.need_join_and_try():
+            self.connection.join(chanstatus.name)
             return
 
         # Say first message and unqueue
         message = chanstatus.messages.pop(0)
-        logger.info("[%s] say %s" % (channel, message))
-        self.connection.privmsg(channel, message)
+        logger.info("[%s] say %s" % (chanstatus.name, message))
+        self.connection.privmsg(chanstatus.name, message)
 
     def is_connected(self):
         """Tell wether the bot is connected or not"""
