@@ -4,6 +4,8 @@
 
 # This file is a part of Kaoz, a free irc notifier
 
+import datetime
+
 # Useful function to differentiate nick and channel names
 from irc.client import is_channel
 
@@ -16,23 +18,48 @@ class ChanStatus(object):
 
     def __init__(self, name):
         self.name = name
-        self.is_joined = False
-        self.join_attemps = 0
         self.messages = list()
+        self._is_joined = False
+        self._join_attempts = 0
+        self._last_join_attempt = None
+
+    def need_join(self):
+        """Return True if this channel needs to be joined"""
+        return is_channel(self.name) and not self._is_joined
+
+    def inc_join_counter(self, max_join_attempts=0, memory_timeout=0):
+        """Increase the join counter if possible
+
+        max_join_attempts - number of join to be attempted before blocking
+        memory_timeout    - number of seconds the block is remembered
+
+        return True if a join should be issued
+        """
+        if max_join_attempts and self._join_attempts >= max_join_attempts:
+            # In strange cases, last_join_attempt can be reset to None
+            if self._last_join_attempt is None:
+                self._last_join_attempt = datetime.datetime.utcnow()
+                return False
+
+            # Forget blocking after a timeout in seconds
+            if memory_timeout:
+                diff = datetime.datetime.utcnow() - self._last_join_attempt
+                if diff >= datetime.timedelta(seconds=memory_timeout):
+                    self._join_attempts = 1
+                    self._last_join_attempt = datetime.datetime.utcnow()
+                    return True
+            # Block joining this channel
+            return False
+
+        # Try to join
+        self._join_attempts = self._join_attempts + 1
+        self._last_join_attempt = datetime.datetime.utcnow()
+        return True
 
     def mark_joined(self):
         """Mark this channel as joined"""
-        self.is_joined = True
-        self.join_attemps = 0
-
-    def need_join_and_try(self):
-        """Return True if this channel needs to be joined.
-        Increase the join counter
-        """
-        need_join = is_channel(self.name) and not self.is_joined
-        if need_join:
-            self.join_attemps = self.join_attemps + 1
-        return need_join
+        self._is_joined = True
+        self._join_attempts = 0
 
 
 class IndexedChanDict(dict):

@@ -57,7 +57,9 @@ class PublisherTestCase(unittest.TestCase):
         with kaoz.publishbot.PublisherThread(self.config) as pub:
             pub.send('#unjoinable-chan', private_message)
             pub.send('#public-chan', public_message)
+            # The two messages must be seen
             message = self.ircsrv.get_displayed_message(10)
+            message2 = self.ircsrv.get_displayed_message(10)
             self.assertFalse(message is None, u"unable to display a message")
             self.assertNotEqual(message.channel, '#unjoinable-chan',
                             u"unjoinable channel got joinned")
@@ -65,3 +67,5 @@ class PublisherTestCase(unittest.TestCase):
                             u"private message got published")
             self.assertEqual(message.channel, '#public-chan')
             self.assertEqual(message.text, public_message)
+            self.assertEqual(message2.channel, '#fallback')
+            self.assertEqual(message2.text, private_message)

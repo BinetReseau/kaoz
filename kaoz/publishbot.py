@@ -43,6 +43,9 @@ class Publisher(irc.client.SimpleIRCClient):
         self._username = config.get('irc', 'username')
         self._password = config.get('irc', 'server_password')
         self._line_sleep = config.getint('irc', 'line_sleep')
+        self._fallbackchan = config.get('irc', 'fallback_channel')
+        self._max_join_attempts = config.getint('irc', 'max_join_attempts')
+        self._memory_timeout = config.getint('irc', 'memory_timeout')
         self._chans = kaoz.channel.IndexedChanDict()
         self._queue = Queue.Queue()
         self._connect_lock = threading.Lock()
@@ -159,8 +162,20 @@ class Publisher(irc.client.SimpleIRCClient):
             return
 
         # Join the channel if needed
-        if chanstatus.need_join_and_try():
-            self.connection.join(chanstatus.name)
+        if chanstatus.need_join():
+            if chanstatus.inc_join_counter(self._max_join_attempts,
+                                           self._memory_timeout):
+                self.connection.join(chanstatus.name)
+            elif self._fallbackchan and chanstatus.name != self._fallbackchan:
+                # Channel is blocked. Do fallback !
+                logger.warning(u"Channel %s is blocked. Using fallback" %
+                            chanstatus.name)
+                message = chanstatus.messages.pop(0)
+                self._chans[self._fallbackchan].messages.append(message)
+            else:
+                logger.error(u"Channel %s is blocked. Dropping message")
+                message = chanstatus.messages.pop(0)
+                logger.error(u"Dropped message was %s" % message)
             return
 
         # Say first message and unqueue

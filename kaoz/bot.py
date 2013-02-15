@@ -27,6 +27,9 @@ DEFAULT_CONFIG = {
     'reconnection_interval': '60',
     'host': '',
     'line_sleep': '1',
+    'fallback_channel': '',
+    'max_join_attempts': '10',
+    'memory_timeout': '3600',
 }
 
 
