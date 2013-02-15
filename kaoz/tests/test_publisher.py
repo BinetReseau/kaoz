@@ -41,15 +41,15 @@ class PublisherTestCase(unittest.TestCase):
             pub.send('#chan1', u"Hello, world !")
             message = self.ircsrv.get_displayed_message(10)
             self.assertFalse(message is None, u"unable to display a message")
-            self.assertTrue(message.channel == '#chan1')
-            self.assertTrue(message.text == u"Hello, world !")
+            self.assertEqual(message.channel, '#chan1')
+            self.assertEqual(message.text, u"Hello, world !")
 
             # Send a line
             pub.send_line(u"#chan1:Message on a line: it works")
             message = self.ircsrv.get_displayed_message(10)
             self.assertFalse(message is None, u"unable to display a message")
-            self.assertTrue(message.channel == '#chan1')
-            self.assertTrue(message.text == u"Message on a line: it works")
+            self.assertEqual(message.channel, '#chan1')
+            self.assertEqual(message.text, u"Message on a line: it works")
 
     def test_unjoinable_chan(self):
         private_message = u"Message for a chan the bot can't join"
@@ -59,9 +59,9 @@ class PublisherTestCase(unittest.TestCase):
             pub.send('#public-chan', public_message)
             message = self.ircsrv.get_displayed_message(10)
             self.assertFalse(message is None, u"unable to display a message")
-            self.assertTrue(message.channel != '#unjoinable-chan',
+            self.assertNotEqual(message.channel, '#unjoinable-chan',
                             u"unjoinable channel got joinned")
-            self.assertTrue(message.text != private_message,
+            self.assertNotEqual(message.text, private_message,
                             u"private message got published")
-            self.assertTrue(message.channel == '#public-chan')
-            self.assertTrue(message.text == public_message)
+            self.assertEqual(message.channel, '#public-chan')
+            self.assertEqual(message.text, public_message)

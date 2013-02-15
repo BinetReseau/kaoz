@@ -73,7 +73,7 @@ class ListenerTestCase(unittest.TestCase):
                 received_line = self.pub.lines.get(timeout=2)
             except Queue.Empty:
                 self.fail(u"Publisher didn't receive anything")
-        self.assertEquals(received_line, sent_line)
+        self.assertEqual(received_line, sent_line)
         self.assertTrue(self.pub.lines.empty(), u"Too many published lines")
 
     def test_multiple_lines(self):
@@ -88,7 +88,7 @@ class ListenerTestCase(unittest.TestCase):
             try:
                 for l in sent_lines:
                     rcvd_line = self.pub.lines.get(timeout=2)
-                    self.assertEquals(rcvd_line, l, u"Wrong published line")
+                    self.assertEqual(rcvd_line, l, u"Wrong published line")
             except Queue.Empty:
                 self.fail(u"Publisher didn't receive enough")
         self.assertTrue(self.pub.lines.empty(), u"Too many published lines")
@@ -111,5 +111,5 @@ class ListenerTestCase(unittest.TestCase):
                 received_line = self.pub.lines.get(timeout=2)
             except Queue.Empty:
                 self.fail(u"Publisher didn't receive anything")
-        self.assertEquals(received_line, sent_line)
+        self.assertEqual(received_line, sent_line)
         self.assertTrue(self.pub.lines.empty(), u"Too many published lines")
