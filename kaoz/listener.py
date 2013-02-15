@@ -32,17 +32,19 @@ class TCPListenerHandler(SocketServer.BaseRequestHandler):
                 real_sock.settimeout(0.5)
             except Exception:
                 logger.error(traceback.format_exc().splitlines()[-1])
-                self.rfile = []
+                self.rfile = None
                 return
         else:
             real_sock = self.request
         self.rfile = real_sock.makefile('r')
 
     def finish(self):
-        if type(self.rfile) is not list:
+        if self.rfile is not None:
             self.rfile.close()
 
     def handle(self):
+        if self.rfile is None:
+            return
         client_addr = '%s:%d' % self.client_address
         logger.debug(u"Client connected from %s" % client_addr)
         for line in self.rfile:
