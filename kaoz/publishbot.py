@@ -125,6 +125,14 @@ class Publisher(irc.client.SimpleIRCClient):
         logger.info("parted from channel %s" % channel)
         self._chans.leave(channel)
 
+    def on_invite(self, connection, event):
+        nick = event.target
+        if nick != connection.get_nickname():
+            return
+        channel = event.arguments[0]
+        logger.info("invited to channel %s" % channel)
+        self.send(channel, u"I'm been invited here.")
+
     def on_privmsg(self, connection, event):
         """Answer to a user privmsg and die on demand"""
         self.connection.privmsg(event.source.nick,
