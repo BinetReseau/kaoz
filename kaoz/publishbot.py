@@ -106,6 +106,8 @@ class Publisher(irc.client.SimpleIRCClient):
 
     def on_kick(self, connection, event):
         """Kicked from a channel"""
+        if len(event.arguments) < 1:
+            return
         nick = event.arguments[0]
         if nick != connection.get_nickname():
             return
@@ -127,7 +129,7 @@ class Publisher(irc.client.SimpleIRCClient):
 
     def on_invite(self, connection, event):
         nick = event.target
-        if nick != connection.get_nickname():
+        if nick != connection.get_nickname() or len(event.arguments) < 1:
             return
         channel = event.arguments[0]
         logger.info("invited to channel %s" % channel)
