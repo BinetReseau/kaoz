@@ -118,7 +118,7 @@ class Publisher(irc.client.SimpleIRCClient):
 
     def on_part(self, connection, event):
         """Parted from a channel"""
-        nick = event.arguments[0]
+        nick = event.source.nick
         if nick != connection.get_nickname():
             return
         channel = event.target
