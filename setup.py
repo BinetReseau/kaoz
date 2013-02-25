@@ -41,7 +41,6 @@ setup(
     ],
     scripts=[
         'bin/kaoz',
-        'bin/kaozclient',
     ],
     data_files=[
         ('kaoz/tests', ['kaoz/tests/kaoz.local.conf', ]),

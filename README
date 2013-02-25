@@ -80,22 +80,6 @@ For that purpose, a client needs to send `secret:#help:Hello` to the server (wit
 
 Kaoz server support multi-lined messages, so long as each lines begins with the password and a channel.
 
-Installing clients
-------------------
-We are providing in the 'client' directory several scripts that can help you getting started with generating messages for Kaoz to send.
-We recommand that you put every one of those scripts in a shared directory. The first lines of each script are to be customized to match the server config.
-Here is a quick overview of the features :
-<dl>
-<dt>ircpipe</dt>
-<dd>This tool allow you to use the shell pipe operator to send messages to Kaoz. Please note that since it contains Kaoz's password, it is rather sensible. All our scripts depend on it. Please note the stdirc script, which should be in the same directory, and is used to provide colors to the messages.</dd>
-<dt>nagios-ircpipe</dt>
-<dd>A simple formater for Nagios, a popular service monitoring tool.</dd>
-<dt>nut-upsalert-ircpipe</dt>
-<dd>A simple formater for NUT, a popular UPS monitoring tool.</dd>
-<dt>pam</dt>
-<dd>The login, rooting and fallback scripts can be use with a matching pam.d config to log login, su/sudo, or a special event (here, it is called by pam in case there is a problem with our physical token authentification server, but it could be anything you want to log). You will find a working sample configuration in the etc-pam.d subdirectory. However, it should be adapted to fit your specific pam.d.</dd>
-</dl>
-
 About IRC style and colors
 -------------------------
 
