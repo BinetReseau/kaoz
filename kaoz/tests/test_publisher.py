@@ -37,12 +37,12 @@ class PublisherTestCase(unittest.TestCase):
     def test_messages(self):
         # Use Publishbot thread here
         with kaoz.publishbot.PublisherThread(self.config) as pub:
-            # Send messages
-            pub.send('#chan1', u"Hello, world !")
+            text = u"Hello, world !"
+            pub.send('#chan1', text)
             message = self.ircsrv.get_displayed_message(10)
             self.assertFalse(message is None, u"unable to display a message")
             self.assertEqual(message.channel, '#chan1')
-            self.assertEqual(message.text, u"Hello, world !")
+            self.assertEqual(message.text, text)
 
             # Send a line
             pub.send_line(u"#chan1:Message on a line: it works")
@@ -50,6 +50,14 @@ class PublisherTestCase(unittest.TestCase):
             self.assertFalse(message is None, u"unable to display a message")
             self.assertEqual(message.channel, '#chan1')
             self.assertEqual(message.text, u"Message on a line: it works")
+
+            # Send messages with e acute in UTF-8 and ISO-8859-1
+            text = u"e acute may be \xc3\xe9 or \xe9."
+            pub.send('#chan1', text)
+            message = self.ircsrv.get_displayed_message(10)
+            self.assertFalse(message is None, u"unable to display a message")
+            self.assertEqual(message.channel, '#chan1')
+            self.assertEqual(message.text, text)
 
     def test_unjoinable_chan(self):
         private_message = u"Message for a chan the bot can't join"

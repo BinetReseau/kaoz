@@ -34,7 +34,6 @@ class _IRCServerHandler(SocketServer.StreamRequestHandler):
 
     def parse_command(self, line):
         """Parse next line sent by the client"""
-        line = line.decode('UTF-8')
         m = _rfc_1459_command_regexp.match(line)
         if not m:
             raise IOError(u"Received invalid line: %s" % line)
@@ -171,7 +170,7 @@ class _IRCServerHandler(SocketServer.StreamRequestHandler):
             u"*** Please wait while I process your data")
 
         for line in self.rfile:
-            line = line.strip()
+            line = line.strip().decode('utf-8')
             if line:
                 logger.debug(u"Received line \"%s\"" % line)
                 self.dispatch_command(line)

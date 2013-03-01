@@ -204,11 +204,11 @@ class Publisher(irc.client.SimpleIRCClient):
         if not self.is_connected():
             self.connect()
         while not self._stop.is_set():
-            # Start infinite loop, ignoring UnicodeDecodeError
+            # Start infinite loop
             try:
                 self.ircobj.process_once(0.2)
-            except UnicodeDecodeError:
-                pass
+            except:
+                logger.critical("Exeption " + traceback.format_exc())
 
     def stop(self):
         """Stop IRC client"""

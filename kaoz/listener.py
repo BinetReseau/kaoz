@@ -36,7 +36,7 @@ class TCPListenerHandler(SocketServer.BaseRequestHandler):
                 return
         else:
             real_sock = self.request
-        self.rfile = real_sock.makefile('r')
+        self.rfile = real_sock.makefile('rb')
 
     def finish(self):
         if self.rfile is not None:
@@ -48,11 +48,8 @@ class TCPListenerHandler(SocketServer.BaseRequestHandler):
         client_addr = '%s:%d' % self.client_address
         logger.debug(u"Client connected from %s" % client_addr)
         for line in self.rfile:
-            try:
-                self.publish_line(line)
-            except UnicodeDecodeError:
-                # Ignore unicode errors
-                logger.warning(traceback.format_exc().splitlines()[-1])
+            line = line.decode('utf-8')
+            self.publish_line(line)
         logger.debug(u"Client disconnected from %s" % client_addr)
 
     def publish_line(self, line):
