@@ -42,11 +42,6 @@ setup(
     scripts=[
         'bin/kaoz',
     ],
-    data_files=[
-        ('kaoz/tests', ['kaoz/tests/kaoz.local.conf', ]),
-        ('kaoz/tests/certs', ['kaoz/tests/certs/kaoz-example.key',
-                              'kaoz/tests/certs/kaoz-example.crt']),
-    ],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: No Input/Output (Daemon)',
