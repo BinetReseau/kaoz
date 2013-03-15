@@ -211,7 +211,9 @@ class Publisher(irc.client.SimpleIRCClient):
             try:
                 self.ircobj.process_once(0.2)
             except:
-                logger.critical("Exeption " + traceback.format_exc())
+                logger.critical("An exception occured in IRC bot:")
+                for line in traceback.format_exc().splitlines():
+                    logger.critical(".. " + line)
 
     def stop(self):
         """Stop IRC client"""
