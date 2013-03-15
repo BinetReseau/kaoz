@@ -67,11 +67,12 @@ class Publisher(irc.client.SimpleIRCClient):
             else:
                 conn_factory = irc.connection.Factory()
             try:
-                super(Publisher, self).connect(self._server, self._port,
-                                               self._nickname,
-                                               password=self._password,
-                                               ircname=self._realname,
-                                               connect_factory=conn_factory)
+                super(Publisher, self).connect(
+                    self._server, self._port, self._nickname,
+                    password=self._password,
+                    username=self._username,
+                    ircname=self._realname,
+                    connect_factory=conn_factory)
                 # Don't raise UnicodeDecodeError exception
                 # when the server doesn't speak UTF-8
                 self.connection.buffer.errors = 'replace'
