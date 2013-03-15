@@ -72,6 +72,9 @@ class Publisher(irc.client.SimpleIRCClient):
                                                password=self._password,
                                                ircname=self._realname,
                                                connect_factory=conn_factory)
+                # Don't raise UnicodeDecodeError exception
+                # when the server doesn't speak UTF-8
+                self.connection.buffer.errors = 'replace'
             except irc.client.ServerConnectionError:
                 logger.error(u"Error connecting to %s" % self._server)
 
