@@ -22,25 +22,28 @@ class TCPListenerHandler(SocketServer.BaseRequestHandler):
     """Manage a request from TCP listener module"""
 
     def setup(self):
+        self.real_sock = None
         if self.server.use_ssl:
             try:
-                real_sock = ssl.wrap_socket(self.request,
+                self.real_sock = ssl.wrap_socket(self.request,
                                             keyfile=self.server.ssl_keyfile,
                                             certfile=self.server.ssl_certfile,
                                             server_side=True,
                                             do_handshake_on_connect=True)
-                real_sock.settimeout(0.5)
+                self.real_sock.settimeout(0.5)
+                self.rfile = self.real_sock.makefile('rb')
             except Exception:
                 logger.error(traceback.format_exc().splitlines()[-1])
                 self.rfile = None
                 return
         else:
-            real_sock = self.request
-        self.rfile = real_sock.makefile('rb')
+            self.rfile = self.request.makefile('rb')
 
     def finish(self):
         if self.rfile is not None:
             self.rfile.close()
+        if self.real_sock is not None:
+            self.real_sock.close()
 
     def handle(self):
         if self.rfile is None:
@@ -77,7 +80,7 @@ class TCPListener(threading.Thread):
         self._host = config.get('listener', 'host')
         self._port = config.getint('listener', 'port')
         self._server = SocketServer.ThreadingTCPServer(
-           (self._host, self._port),
+            (self._host, self._port),
             TCPListenerHandler)
         self._server.password = config.get('listener', 'password')
         if config.getboolean('listener', 'ssl'):
