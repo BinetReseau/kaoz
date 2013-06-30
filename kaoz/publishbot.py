@@ -76,6 +76,10 @@ class Publisher(irc.client.SimpleIRCClient):
                 # Don't raise UnicodeDecodeError exception
                 # when the server doesn't speak UTF-8
                 self.connection.buffer.errors = 'replace'
+
+                # Configure keep-alive pings, if available
+                if hasattr(self.connection, 'set_keepalive'):
+                    self.connection.set_keepalive(60)
             except irc.client.ServerConnectionError:
                 logger.error(u"Error connecting to %s" % self._server)
 
