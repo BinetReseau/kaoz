@@ -30,6 +30,7 @@ DEFAULT_CONFIG = {
     'fallback_channel': '',
     'max_join_attempts': '10',
     'memory_timeout': '3600',
+    'channel_maxlen': '100',
 }
 
 

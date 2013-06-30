@@ -22,6 +22,25 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+# IRC limit on message and channel name length.
+# According to the RFC http://tools.ietf.org/html/rfc2812#page-6, a message is
+# admissible only if the IRC client won't eventually have to send a message
+# longer than 512 bytes.
+# The message that will be sent by the irc.client module is:
+#     'PRIVMSG {channel} :{message}\r\n'
+# so we only send messages which satisfy:
+#     len(channel) + len(message) <= 512 - 12
+IRC_CHANMSG_MAXLEN = 500
+
+
+def utf8_cut(bytestr, maxlen):
+    """Cuts an utf8 bytestring in two parts where the left is at most maxlen
+    long, and both are valid utf8 strings.
+    """
+    left = bytestr[:maxlen].decode('utf-8', 'ignore').encode('utf-8')
+    return left, bytestr[len(left):]
+
+
 class Publisher(irc.client.SimpleIRCClient):
     """A basic IRC publisher which sends lines to IRC
 
@@ -46,6 +65,14 @@ class Publisher(irc.client.SimpleIRCClient):
         self._fallbackchan = config.get('irc', 'fallback_channel')
         self._max_join_attempts = config.getint('irc', 'max_join_attempts')
         self._memory_timeout = config.getint('irc', 'memory_timeout')
+        self._channel_maxlen = config.getint('irc', 'channel_maxlen')
+
+        if self._channel_maxlen < 1 or \
+            self._channel_maxlen > IRC_CHANMSG_MAXLEN - 1:
+            logger.warning("Invalid channel_maxlen value (%d), using 100" %
+                           self._channel_maxlen)
+            self._channel_maxlen = 100
+
         self._chans = kaoz.channel.IndexedChanDict()
         self._queue = Queue.Queue()
         self._connect_lock = threading.Lock()
@@ -151,8 +178,13 @@ class Publisher(irc.client.SimpleIRCClient):
     def send(self, channel, message):
         """Send a message to a channel. Join the channel before talking.
 
-        This is the interface of this class and is thread-safe
+        This is the interface of this class and is thread-safe.
+
+        channel and message are unicode strings.
         """
+        if len(channel.encode('utf8')) > self._channel_maxlen:
+            logger.warning("Channel length limit exceeded, dropping message")
+            return
         self._queue.put((channel, message))
 
     def _say_messages(self):
@@ -164,7 +196,23 @@ class Publisher(irc.client.SimpleIRCClient):
         # Dequeue everything, creating channel objects if needed
         while not self._queue.empty():
             (channel, message) = self._queue.get()
-            self._chans[channel].messages.append(message)
+            # Split message if it is too long
+            channel_length = len(channel.encode('utf8'))
+            max_message_size = IRC_CHANMSG_MAXLEN - channel_length
+            # Need at least 5 characters
+            if max_message_size <= 5:
+                logger.error("Channel name too long, dropping message")
+                continue
+            encoded = message.encode('utf-8')
+            while len(encoded) > max_message_size:
+                left, encoded = utf8_cut(encoded, max_message_size)
+                if not left:
+                    logger.error("Unable to decode message, dropping it")
+                    break
+                self._chans[channel].messages.append(left.decode('utf-8'))
+            if encoded and len(encoded) <= max_message_size:
+                self._chans[channel].messages.append(
+                    encoded.decode('utf-8', 'ignore'))
 
         # Don't do anything if server is stopped
         if self._stop.is_set():
