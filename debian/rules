@@ -1,0 +1,10 @@
+#!/usr/bin/make -f
+%:
+	dh $@ --with python2 --buildsystem=python_distutils
+
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	python setup.py test
+else
+	@echo "nocheck set, not running tests"
+endif
