@@ -18,6 +18,8 @@ from kaoz import publishbot
 from kaoz import listener
 
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_CONFIG_FILE = '/etc/kaoz.conf'
 
 DEFAULT_CONFIG = {
@@ -66,6 +68,11 @@ def main(argv):
     # Read configuration
     config = ConfigParser.SafeConfigParser(DEFAULT_CONFIG)
     config.read(opts.config)
+
+    # Test wether the configuration gives a good server
+    if config.get('irc', 'server').endswith('example.org'):
+        logger.fatal("configuration file contains example irc server, aborting")
+        sys.exit(1)
 
     # Start publisher and listener as daemon threads
     event = threading.Event()
