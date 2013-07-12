@@ -43,12 +43,12 @@ def main(argv):
         usage="usage: %prog [options]",
         version="%prog " + kaoz.__version__)
     parser.add_option('-c', '--config', action='store', dest='config',
-        help=u"Read configuration from CONFIG", metavar="CONFIG",
+        help="read configuration from CONFIG", metavar="CONFIG",
         default=DEFAULT_CONFIG_FILE)
     parser.add_option('-d', '--debug', action='store_true', dest='debug',
         help="log debug messages", default=False)
     parser.add_option('-l', '--logstd', action='store_true', dest='logstd',
-        help="Log messages to standard channel", default=False)
+        help="log messages to standard channel", default=False)
 
     opts, argv = parser.parse_args(argv)
 
