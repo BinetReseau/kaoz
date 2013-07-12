@@ -8,3 +8,8 @@ ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 else
 	@echo "nocheck set, not running tests"
 endif
+
+override_dh_installinit:
+	dh_installinit --no-start
+
+.PHONY: override_dh_auto_test override_dh_installinit
