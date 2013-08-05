@@ -2,17 +2,23 @@
 # Copyright © 2011-2013 Binet Réseau
 # See the LICENCE file for more informations
 
-from .common import unittest, get_local_conf, configure_logger
 import kaoz.listener
-import Queue
 import os
 import socket
+import sys
+
+if sys.version_info < (3,):
+    import Queue as queue
+else:
+    import queue
 
 try:
     import ssl
     has_ssl = True
 except ImportError:
     has_ssl = False
+
+from .common import unittest, get_local_conf, configure_logger
 
 configure_logger(kaoz.listener.logger, 'WARNING')
 
@@ -21,7 +27,7 @@ class DummyPublisher(object):
     """Publisher for testing purpose"""
 
     def __init__(self):
-        self.lines = Queue.Queue()
+        self.lines = queue.Queue()
 
     def send_line(self, line):
         """Listener sends a line to the publisher"""
@@ -58,28 +64,27 @@ class ListenerTestCase(unittest.TestCase):
         del self.pub
 
     def test_listener(self):
-        sent_line = u"#chan1:Hello, world"
+        sent_line = "#chan1:Hello, world"
         # Start listener
         with kaoz.listener.TCPListener(self.pub, self.config):
             # Send one line
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((self.host, self.port))
-            packet = u"%s:%s" % (self.password, sent_line)
+            packet = "%s:%s" % (self.password, sent_line)
             sock.sendall(packet.encode('UTF-8'))
             sock.close()
 
             # Close everything and wait for the publisher to receive the line
             try:
                 received_line = self.pub.lines.get(timeout=2)
-            except Queue.Empty:
-                self.fail(u"Publisher didn't receive anything")
+            except queue.Empty:
+                self.fail("Publisher didn't receive anything")
         self.assertEqual(received_line, sent_line)
-        self.assertTrue(self.pub.lines.empty(), u"Too many published lines")
+        self.assertTrue(self.pub.lines.empty(), "Too many published lines")
 
     def test_multiple_lines(self):
-        sent_lines = map(lambda i: u"#chan%d:Line %d" % (i, i), range(10))
-        packet = u"\r\n".join(map(lambda l: u"%s:%s" % (self.password, l),
-                                  sent_lines))
+        sent_lines = ["#chan%d:Line %d" % (i, i) for i in range(10)]
+        packet = "\r\n".join([(self.password + ":" + l) for l in sent_lines])
         with kaoz.listener.TCPListener(self.pub, self.config):
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((self.host, self.port))
@@ -88,28 +93,28 @@ class ListenerTestCase(unittest.TestCase):
             try:
                 for l in sent_lines:
                     rcvd_line = self.pub.lines.get(timeout=2)
-                    self.assertEqual(rcvd_line, l, u"Wrong published line")
-            except Queue.Empty:
-                self.fail(u"Publisher didn't receive enough")
-        self.assertTrue(self.pub.lines.empty(), u"Too many published lines")
+                    self.assertEqual(rcvd_line, l, "Wrong published line")
+            except queue.Empty:
+                self.fail("Publisher didn't receive enough")
+        self.assertTrue(self.pub.lines.empty(), "Too many published lines")
 
     @unittest.skipUnless(has_ssl, "requires ssl library")
     def test_ssl(self):
-        sent_line = u"#chan1:Hello, world, from SSL"
+        sent_line = "#chan1:Hello, world, from SSL"
         # Start listener
         with kaoz.listener.TCPListener(self.pub, self.ssl_config):
             # Send one line
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock = ssl.wrap_socket(sock)
             sock.connect((self.host, self.port))
-            packet = u"%s:%s" % (self.password, sent_line)
+            packet = "%s:%s" % (self.password, sent_line)
             sock.sendall(packet.encode('UTF-8'))
             sock.close()
 
             # Close everything and wait for the publisher to receive the line
             try:
                 received_line = self.pub.lines.get(timeout=2)
-            except Queue.Empty:
-                self.fail(u"Publisher didn't receive anything")
+            except queue.Empty:
+                self.fail("Publisher didn't receive anything")
         self.assertEqual(received_line, sent_line)
-        self.assertTrue(self.pub.lines.empty(), u"Too many published lines")
+        self.assertTrue(self.pub.lines.empty(), "Too many published lines")
