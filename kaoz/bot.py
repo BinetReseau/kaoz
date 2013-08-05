@@ -5,13 +5,17 @@
 
 """Core of the Kaoz system."""
 
-import ConfigParser
 import logging
 import logging.handlers
 import optparse
 import os
 import sys
 import threading
+
+if sys.version_info < (3,):
+    from ConfigParser import SafeConfigParser as ConfigParser
+else:
+    from configparser import ConfigParser
 
 import kaoz
 from kaoz import publishbot
@@ -66,7 +70,7 @@ def main(argv):
         root_logger.addHandler(log_handler)
 
     # Read configuration
-    config = ConfigParser.SafeConfigParser(DEFAULT_CONFIG)
+    config = ConfigParser(DEFAULT_CONFIG)
     config.read(opts.config)
 
     # Test wether the configuration gives a good server

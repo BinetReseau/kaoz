@@ -7,11 +7,16 @@
 import irc.client
 import irc.connection
 import logging
-import Queue
+import sys
 import threading
 import traceback
 
 import kaoz.channel
+
+if sys.version_info < (3,):
+    import Queue as queue
+else:
+    import queue
 
 try:
     import ssl
@@ -74,7 +79,7 @@ class Publisher(irc.client.SimpleIRCClient):
             self._channel_maxlen = 100
 
         self._chans = kaoz.channel.IndexedChanDict()
-        self._queue = Queue.Queue()
+        self._queue = queue.Queue()
         self._connect_lock = threading.Lock()
         self._has_welcome = False
         self._stop = threading.Event()
@@ -87,7 +92,7 @@ class Publisher(irc.client.SimpleIRCClient):
             if self._stop.is_set() or self.is_connected():
                 # Don't connect if server is stopped or if it is already
                 return
-            logger.info(u"connecting to %s:%d..." % (self._server, self._port))
+            logger.info("connecting to %s:%d..." % (self._server, self._port))
             if self._use_ssl:
                 assert has_ssl, "SSL support requested but not available"
                 conn_factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
@@ -108,7 +113,7 @@ class Publisher(irc.client.SimpleIRCClient):
                 if hasattr(self.connection, 'set_keepalive'):
                     self.connection.set_keepalive(60)
             except irc.client.ServerConnectionError as e:
-                logger.error(u"Error connecting to %s: %s" % (self._server, e))
+                logger.error("Error connecting to %s: %s" % (self._server, e))
 
     def _check_connect(self):
         """Force reconnection periodically"""
@@ -121,7 +126,7 @@ class Publisher(irc.client.SimpleIRCClient):
         This is a fatal error as this means something in the configuration
         went wrong.
         """
-        logger.fatal(u"Nickname %s is already in use. Abort!" % self._nickname)
+        logger.fatal("Nickname %s is already in use. Abort!" % self._nickname)
         self.stop()
 
     def on_welcome(self, connection, event):
@@ -129,12 +134,12 @@ class Publisher(irc.client.SimpleIRCClient):
 
         Send all queued messages.
         """
-        logger.info(u"connection made to %s" % event.source)
+        logger.info("connection made to %s" % event.source)
         self._has_welcome = True
 
     def on_disconnect(self, connection, event):
         """On disconnect, reconnect !"""
-        logger.info(u"disconnect event received")
+        logger.info("disconnect event received")
         self._chans.leave_all()
         self._has_welcome = False
 
@@ -145,7 +150,7 @@ class Publisher(irc.client.SimpleIRCClient):
         if nick != connection.get_nickname():
             return
         channel = event.target
-        logger.info(u"Joined channel %s" % channel)
+        logger.info("Joined channel %s" % channel)
         self._chans[channel].mark_joined()
 
     def on_kick(self, connection, event):
@@ -157,9 +162,9 @@ class Publisher(irc.client.SimpleIRCClient):
             return
         channel = event.target
         kicker = event.source
-        logger.info(u"kicked from channel %s by %s" % (channel, kicker))
+        logger.info("kicked from channel %s by %s" % (channel, kicker))
         self.connection.notice(kicker,
-                               u"That was mean, I'm just a bot you know")
+                               "That was mean, I'm just a bot you know")
         self._chans.leave(channel)
 
     def on_part(self, connection, event):
@@ -177,12 +182,12 @@ class Publisher(irc.client.SimpleIRCClient):
             return
         channel = event.arguments[0]
         logger.info("invited to channel %s" % channel)
-        self.send(channel, u"I'm been invited here.")
+        self.send(channel, "I'm been invited here.")
 
     def on_privmsg(self, connection, event):
         """Answer to a user privmsg and die on demand"""
         self.connection.privmsg(event.source.nick,
-                                u"I'm a bot, hence I will never answer")
+                                "I'm a bot, hence I will never answer")
 
     def send(self, channel, message):
         """Send a message to a channel. Join the channel before talking.
@@ -243,14 +248,14 @@ class Publisher(irc.client.SimpleIRCClient):
                 self.connection.join(chanstatus.name)
             elif self._fallbackchan and chanstatus.name != self._fallbackchan:
                 # Channel is blocked. Do fallback !
-                logger.warning(u"Channel %s is blocked. Using fallback" %
+                logger.warning("Channel %s is blocked. Using fallback" %
                             chanstatus.name)
                 message = chanstatus.messages.pop(0)
                 self._chans[self._fallbackchan].messages.append(message)
             else:
-                logger.error(u"Channel %s is blocked. Dropping message")
+                logger.error("Channel %s is blocked. Dropping message")
                 message = chanstatus.messages.pop(0)
-                logger.error(u"Dropped message was %s" % message)
+                logger.error("Dropped message was %s" % message)
             return
 
         # Say first message and unqueue
