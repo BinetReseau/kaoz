@@ -60,6 +60,14 @@ class _IRCServerHandler(SocketServer.StreamRequestHandler):
         """Process received NICK command"""
         assert(len(args) >= 1 and args[0])
         self._nick = args[0]
+        # Test ""nick already in use" error case
+        if self._nick.endswith('already-in-use'):
+            self.command(433, u"%s %s" % ("*", self._nick),
+                         u"Nickname is already in use.")
+            logger.info(u"Nick %s is already in use" % self._nick)
+            self._quit = True
+            return
+
         if self._username:
             self.do_welcome()
 

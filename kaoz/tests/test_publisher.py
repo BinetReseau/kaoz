@@ -9,6 +9,10 @@ import kaoz.publishbot
 configure_ircserver_log('INFO')
 configure_logger(kaoz.publishbot.logger, 'DEBUG')
 
+# Uncomment to get logging information from irc.client
+#import irc.client
+#configure_logger(irc.client.log, 'DEBUG')
+
 
 class PublisherTestCase(unittest.TestCase):
 
@@ -31,6 +35,20 @@ class PublisherTestCase(unittest.TestCase):
                 pub.ircobj.process_once(1)
                 num_messages = num_messages + 1
             self.assertTrue(pub.is_connected(), u"connect times out")
+        finally:
+            pub.stop()
+
+    def test_alreadyinuse_nick(self):
+        self.config.set('irc', 'nickname', 'Nick-already-in-use')
+        pub = kaoz.publishbot.Publisher(self.config)
+        try:
+            pub.connect()
+            # Process messages until connection is stopped
+            for num_processings in range(5):
+                if pub.is_stopped():
+                    break
+                pub.ircobj.process_once(1)
+            self.assertTrue(pub.is_stopped(), u"connect was not stopped")
         finally:
             pub.stop()
 

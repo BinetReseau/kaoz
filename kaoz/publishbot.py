@@ -115,6 +115,15 @@ class Publisher(irc.client.SimpleIRCClient):
         if (not self.is_connected()) and (not self._stop.is_set()):
             self.connect()
 
+    def on_nicknameinuse(self, connection, event):
+        """Nickname is already in use
+
+        This is a fatal error as this means something in the configuration
+        went wrong.
+        """
+        logger.fatal(u"Nickname %s is already in use. Abort!" % self._nickname)
+        self.stop()
+
     def on_welcome(self, connection, event):
         """Handler for post-connection event.
 
@@ -253,6 +262,10 @@ class Publisher(irc.client.SimpleIRCClient):
         """Tell wether the bot is connected or not"""
         return self.connection.is_connected() and self._has_welcome
 
+    def is_stopped(self):
+        """Tell wether the connection is stopped"""
+        return self._stop.is_set()
+
     def run(self):
         """Infinite loop of message processing"""
         # There is a periodic task which checks connection
@@ -271,7 +284,8 @@ class Publisher(irc.client.SimpleIRCClient):
     def stop(self):
         """Stop IRC client"""
         self._stop.set()
-        self.connection.close()
+        if self.is_connected():
+            self.connection.close()
 
 
 class PublisherThread(threading.Thread):
