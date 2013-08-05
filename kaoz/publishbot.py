@@ -107,8 +107,8 @@ class Publisher(irc.client.SimpleIRCClient):
                 # Configure keep-alive pings, if available
                 if hasattr(self.connection, 'set_keepalive'):
                     self.connection.set_keepalive(60)
-            except irc.client.ServerConnectionError:
-                logger.error(u"Error connecting to %s" % self._server)
+            except irc.client.ServerConnectionError as e:
+                logger.error(u"Error connecting to %s: %s" % (self._server, e))
 
     def _check_connect(self):
         """Force reconnection periodically"""
