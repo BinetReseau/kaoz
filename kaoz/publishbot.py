@@ -249,11 +249,12 @@ class Publisher(irc.client.SimpleIRCClient):
             elif self._fallbackchan and chanstatus.name != self._fallbackchan:
                 # Channel is blocked. Do fallback !
                 logger.warning("Channel %s is blocked. Using fallback" %
-                            chanstatus.name)
+                               chanstatus.name)
                 message = chanstatus.messages.pop(0)
                 self._chans[self._fallbackchan].messages.append(message)
             else:
-                logger.error("Channel %s is blocked. Dropping message")
+                logger.error("Channel %s is blocked. Dropping message" %
+                             chanstatus.name)
                 message = chanstatus.messages.pop(0)
                 logger.error("Dropped message was %s" % message)
             return
