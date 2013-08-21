@@ -1,2 +1,1 @@
-#! /usr/bin/dh-exec
-kaoz.example.conf => etc/kaoz.conf
+etc/kaoz.conf /etc
