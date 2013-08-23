@@ -110,6 +110,6 @@ class IndexedChanDict(dict):
         """Find a channel which has messages waiting to be sent, or None"""
         for (i, channel) in enumerate(self._list):
             if self[channel].messages:
-                self._list = self._list[(i+1):] + self._list[0:i+1]
+                self._list = self._list[(i + 1):] + self._list[0:i + 1]
                 return self[channel]
         return None

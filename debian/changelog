@@ -1,0 +1,21 @@
+kaoz (2.0.3-1) unstable; urgency=low
+
+  * New upstream version.
+    + Handle nick-already-in-use error
+    + Report irc.client.ServerConnectionError messages on connection errors
+
+ -- Nicolas Iooss <nicolas.iooss@m4x.org>  Tue, 20 Aug 2013 12:35:42 +0200
+
+kaoz (2.0.2-1) unstable; urgency=low
+
+  * New upstream version.
+    + Implement a keep-alive mechanism of the IRC connection
+    + Limit the length of the messages and split them if needed
+
+ -- Nicolas Iooss <nicolas.iooss@m4x.org>  Fri, 12 Jul 2013 23:46:54 +0200
+
+kaoz (2.0.1-1) unstable; urgency=low
+
+  * Initial release.
+
+ -- Nicolas Iooss <nicolas.iooss@m4x.org>  Sat, 06 Jul 2013 12:32:53 +0200

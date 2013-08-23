@@ -30,3 +30,11 @@ config.py
 
 # Editors
 .*.sw[po]
+
+# Debian package
+/debian/*.log
+/debian/*.debhelper
+/debian/*.substvars
+/debian/files
+/debian/kaoz
+/debian/tmp

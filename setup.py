@@ -54,8 +54,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
     ],
-    tests_require = ['unittest2'] if sys.version_info < (3, ) else [],
+    tests_require=['unittest2'] if sys.version_info < (3, ) else [],
     test_suite='kaoz.tests',
-    use_2to3=True,
     include_package_data=True,
 )

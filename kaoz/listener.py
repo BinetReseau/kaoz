@@ -5,9 +5,14 @@
 # This file is a part of Kaoz, a free irc notifier
 
 import logging
-import SocketServer
+import sys
 import threading
 import traceback
+
+if sys.version_info < (3,):
+    import SocketServer as socketserver
+else:
+    import socketserver
 
 try:
     import ssl
@@ -18,39 +23,42 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class TCPListenerHandler(SocketServer.BaseRequestHandler):
+class TCPListenerHandler(socketserver.BaseRequestHandler):
     """Manage a request from TCP listener module"""
 
     def setup(self):
+        self.real_sock = None
         if self.server.use_ssl:
             try:
-                real_sock = ssl.wrap_socket(self.request,
+                self.real_sock = ssl.wrap_socket(self.request,
                                             keyfile=self.server.ssl_keyfile,
                                             certfile=self.server.ssl_certfile,
                                             server_side=True,
                                             do_handshake_on_connect=True)
-                real_sock.settimeout(0.5)
+                self.real_sock.settimeout(0.5)
+                self.rfile = self.real_sock.makefile('rb')
             except Exception:
                 logger.error(traceback.format_exc().splitlines()[-1])
                 self.rfile = None
                 return
         else:
-            real_sock = self.request
-        self.rfile = real_sock.makefile('rb')
+            self.rfile = self.request.makefile('rb')
 
     def finish(self):
         if self.rfile is not None:
             self.rfile.close()
+        if self.real_sock is not None:
+            self.real_sock.close()
 
     def handle(self):
         if self.rfile is None:
             return
         client_addr = '%s:%d' % self.client_address
-        logger.debug(u"Client connected from %s" % client_addr)
+        logger.debug("Client connected from %s" % client_addr)
         for line in self.rfile:
             line = line.decode('utf-8')
             self.publish_line(line)
-        logger.debug(u"Client disconnected from %s" % client_addr)
+        logger.debug("Client disconnected from %s" % client_addr)
 
     def publish_line(self, line):
         """publish a received line which is prefixed by 'password:'"""
@@ -59,10 +67,10 @@ class TCPListenerHandler(SocketServer.BaseRequestHandler):
             return
         expected_prefix = self.server.password + ':'
         if not line.startswith(expected_prefix):
-            logger.warning(u"Invalid password on line %s" % line)
+            logger.warning("Invalid password on line %s" % line)
             return
         line = line[len(expected_prefix):]
-        logger.debug(u"Received line %s" % line)
+        logger.debug("Received line %s" % line)
         self.server.publisher.send_line(line)
 
 
@@ -76,8 +84,8 @@ class TCPListener(threading.Thread):
         super(TCPListener, self).__init__()
         self._host = config.get('listener', 'host')
         self._port = config.getint('listener', 'port')
-        self._server = SocketServer.ThreadingTCPServer(
-           (self._host, self._port),
+        self._server = socketserver.ThreadingTCPServer(
+            (self._host, self._port),
             TCPListenerHandler)
         self._server.password = config.get('listener', 'password')
         if config.getboolean('listener', 'ssl'):
@@ -92,12 +100,12 @@ class TCPListener(threading.Thread):
 
     def run(self):
         try:
-            logger.debug(u"Server runs")
+            logger.debug("Server runs")
             self._server.serve_forever()
         except:
             logger.critical(traceback.format_exc().splitlines()[-1])
         finally:
-            logger.debug(u"Server has been shut down")
+            logger.debug("Server has been shut down")
             if self._event:
                 self._event.set()
 

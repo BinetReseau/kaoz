@@ -4,10 +4,15 @@
 
 """Common utilities for test cases"""
 
-import ConfigParser
 import kaoz.bot
 import logging
 import os
+import sys
+
+if sys.version_info < (3,):
+    from ConfigParser import SafeConfigParser as ConfigParser
+else:
+    from configparser import ConfigParser
 
 from .ircserver import IRCServerThread, logger as ircserver_logger
 
@@ -20,9 +25,9 @@ except ImportError:
 def get_local_conf(filename=None):
     """Load local configuration"""
     if not filename:
-        filename = u"kaoz.local.conf"
+        filename = "kaoz.local.conf"
     path = os.path.join(os.path.dirname(__file__), filename)
-    config = ConfigParser.SafeConfigParser(kaoz.bot.DEFAULT_CONFIG)
+    config = ConfigParser(kaoz.bot.DEFAULT_CONFIG)
     config.read(path)
     return config
 
@@ -43,12 +48,12 @@ def configure_logger(logger, loglevel):
     if not isinstance(loglevel, int):
         num_loglevel = getattr(logging, loglevel.upper(), None)
         if not isinstance(num_loglevel, int):
-            raise ValueError(u"Invalid log level: %s" % loglevel)
+            raise ValueError("Invalid log level: %s" % loglevel)
         loglevel = num_loglevel
     logger.setLevel(loglevel)
     log_handler = logging.StreamHandler()
     log_handler.setFormatter(logging.Formatter(
-        u"[%(levelname)s] %(name)s: %(message)s"))
+        "[%(levelname)s] %(name)s: %(message)s"))
     logger.addHandler(log_handler)
 
 

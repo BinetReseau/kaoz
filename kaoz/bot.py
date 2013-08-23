@@ -5,7 +5,6 @@
 
 """Core of the Kaoz system."""
 
-import ConfigParser
 import logging
 import logging.handlers
 import optparse
@@ -13,10 +12,17 @@ import os
 import sys
 import threading
 
+if sys.version_info < (3,):
+    from ConfigParser import SafeConfigParser as ConfigParser
+else:
+    from configparser import ConfigParser
+
 import kaoz
 from kaoz import publishbot
 from kaoz import listener
 
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_CONFIG_FILE = '/etc/kaoz.conf'
 
@@ -30,6 +36,7 @@ DEFAULT_CONFIG = {
     'fallback_channel': '',
     'max_join_attempts': '10',
     'memory_timeout': '3600',
+    'channel_maxlen': '100',
 }
 
 
@@ -40,12 +47,12 @@ def main(argv):
         usage="usage: %prog [options]",
         version="%prog " + kaoz.__version__)
     parser.add_option('-c', '--config', action='store', dest='config',
-        help=u"Read configuration from CONFIG", metavar="CONFIG",
+        help="read configuration from CONFIG", metavar="CONFIG",
         default=DEFAULT_CONFIG_FILE)
     parser.add_option('-d', '--debug', action='store_true', dest='debug',
         help="log debug messages", default=False)
     parser.add_option('-l', '--logstd', action='store_true', dest='logstd',
-        help="Log messages to standard channel", default=False)
+        help="log messages to standard channel", default=False)
 
     opts, argv = parser.parse_args(argv)
 
@@ -63,8 +70,13 @@ def main(argv):
         root_logger.addHandler(log_handler)
 
     # Read configuration
-    config = ConfigParser.SafeConfigParser(DEFAULT_CONFIG)
+    config = ConfigParser(DEFAULT_CONFIG)
     config.read(opts.config)
+
+    # Test wether the configuration gives a good server
+    if config.get('irc', 'server').endswith('example.org'):
+        logger.fatal("configuration file contains example irc server, aborting")
+        sys.exit(1)
 
     # Start publisher and listener as daemon threads
     event = threading.Event()

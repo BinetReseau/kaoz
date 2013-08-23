@@ -1,3 +1,4 @@
+include etc/kaoz.conf
 include kaoz/tests/kaoz.local.conf
 include kaoz/tests/certs/kaoz-example.crt
 include kaoz/tests/certs/kaoz-example.key
