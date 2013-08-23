@@ -36,13 +36,13 @@ class TCPListenerHandler(socketserver.BaseRequestHandler):
                                             server_side=True,
                                             do_handshake_on_connect=True)
                 self.real_sock.settimeout(0.5)
-                self.rfile = self.real_sock.makefile('rb')
+                self.rfile = self.real_sock.makefile('rwb')
             except Exception:
                 logger.error(traceback.format_exc().splitlines()[-1])
                 self.rfile = None
                 return
         else:
-            self.rfile = self.request.makefile('rb')
+            self.rfile = self.request.makefile('rwb')
 
     def finish(self):
         if self.rfile is not None:
@@ -57,11 +57,15 @@ class TCPListenerHandler(socketserver.BaseRequestHandler):
         logger.debug("Client connected from %s" % client_addr)
         for line in self.rfile:
             line = line.decode('utf-8')
-            self.publish_line(line)
+            resp = self.handle_line(line)
+            if resp is not None:
+                resp += '\n'
+                resp = resp.encode('utf-8')
+                self.rfile.write(resp)
         logger.debug("Client disconnected from %s" % client_addr)
 
-    def publish_line(self, line):
-        """publish a received line which is prefixed by 'password:'"""
+    def handle_line(self, line):
+        """Remove 'password:' prefix of the incomming line"""
         line = line.strip()
         if not line:
             return
@@ -71,6 +75,21 @@ class TCPListenerHandler(socketserver.BaseRequestHandler):
             return
         line = line[len(expected_prefix):]
         logger.debug("Received line %s" % line)
+        if line[0] == ':':
+            line = line[1:]
+            return self.process_line(line)
+        else:
+            return self.publish_line(line)
+
+    def process_line(self, line):
+        """Process a command"""
+        if line == 'channels':
+            return str('\n'.join(self.server.publisher.channels()))
+        else:
+            return "Unknown command: %s" % line
+
+    def publish_line(self, line):
+        """Transmit received line to the publisher"""
         self.server.publisher.send_line(line)
 
 

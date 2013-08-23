@@ -268,6 +268,9 @@ class Publisher(irc.client.SimpleIRCClient):
         """Tell wether the bot is connected or not"""
         return self.connection.is_connected() and self._has_welcome
 
+    def channels(self):
+        return list(self._chans.keys())
+
     def is_stopped(self):
         """Tell wether the connection is stopped"""
         return self._stop.is_set()
@@ -344,6 +347,9 @@ class PublisherThread(threading.Thread):
 
         channel, message = line_parts
         self.send(channel, message)
+
+    def channels(self):
+        return self._publisher.channels()
 
     def __enter__(self):
         self.start()
