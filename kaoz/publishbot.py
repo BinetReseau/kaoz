@@ -311,7 +311,7 @@ class PublisherThread(threading.Thread):
             self._publisher.run()
         except:
             if self._debug:
-                logger.critical("Exeption " + traceback.format_exc())
+                logger.critical("Exception " + traceback.format_exc())
             else:
                 logger.critical(traceback.format_exc().splitlines()[-1])
         finally:
