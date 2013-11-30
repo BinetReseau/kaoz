@@ -24,8 +24,8 @@ Dependencies
 ------------
 
 * python
-* python openssl librairies (if you whish to use SSL)
-* python irc library
+* python ssl module (if you whish to use SSL)
+* python irc library (https://bitbucket.org/jaraco/irc)
 
 Installation of the server
 --------------------------
@@ -39,8 +39,7 @@ It should be easy to figure out how to adapt this file to your distribution.
 Known limitations
 -----------------
 
-* Kaoz does not support key-protected channels
-* Kaoz does not check messages for oversized lines therefore, long lines may be cut by the IRC server.
+* Kaoz does not support key-protected channels.
 
 Kaoz client examples
 --------------------
