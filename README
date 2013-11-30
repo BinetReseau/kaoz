@@ -44,6 +44,9 @@ Known limitations
 Kaoz client examples
 --------------------
 
+Sending messages to IRC
+~~~~~~~~~~~~~~~~~~~~~~~
+
 Here are some ways to send ``Hello`` to channel ``#help`` using a Kaoz server which is listenning on host ``myhost`` port ``4242``, protected with password ``secret``.
 For that purpose, a client needs to send ``secret:#help:Hello`` to the server (with an optional LF or CR+LF, as you want).
 
@@ -90,6 +93,18 @@ For that purpose, a client needs to send ``secret:#help:Hello`` to the server (w
     sock.close()
 
 Kaoz server support multi-lined messages, so long as each lines begins with the password and a channel.
+
+Sending commands to Koaz
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+A Kaoz server also accepts basic commands which enable its monitoring.
+When a client wants to run ``command`` on the server, she needs to send ``secret::command`` and the server replies directly in the socket.
+The double colon that it is a command, rather than a message to send to IRC.
+
+The following commands are supported (there is only one for the time being):
+
+* ``channels``: get the list of channels the server has joined.
+
 
 About IRC style and colors
 --------------------------
