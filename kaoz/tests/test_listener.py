@@ -28,10 +28,16 @@ class DummyPublisher(object):
 
     def __init__(self):
         self.lines = queue.Queue()
+        self._channels = None
 
     def send_line(self, line):
         """Listener sends a line to the publisher"""
         self.lines.put(line)
+
+    def channels(self, new_channel=None):
+        if new_channel is not None:
+            self._channels = new_channel
+        return self._channels
 
 
 def sslize_config(config):
@@ -118,3 +124,20 @@ class ListenerTestCase(unittest.TestCase):
                 self.fail("Publisher didn't receive anything")
         self.assertEqual(received_line, sent_line)
         self.assertTrue(self.pub.lines.empty(), "Too many published lines")
+
+    def test_commands(self):
+        testing_channel = "#testing-channel"
+        self.pub.channels([testing_channel])
+        with kaoz.listener.TCPListener(self.pub, self.config):
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((self.host, self.port))
+
+            # Get list of channels
+            packet = "%s::channels" % (self.password)
+            sock.sendall(packet.encode('UTF-8'))
+            sock.shutdown(socket.SHUT_WR)
+            sock.settimeout(2)
+            line = sock.makefile().readline()
+            sock.settimeout(None)
+            sock.close()
+        self.assertEqual(line, testing_channel + "\n")

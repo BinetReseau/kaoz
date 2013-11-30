@@ -105,6 +105,9 @@ class PublisherTestCase(unittest.TestCase):
             self.assertEqual(message2.channel, '#fallback')
             self.assertEqual(message2.text, private_message)
 
+            # Check the list of channels
+            self.assertItemsEqual(pub.channels(), ['#public-chan', '#fallback'])
+
     def test_long_message(self):
         bytes_message = b"Long message: " + (b"\xc3\xa9" * 1000)
         long_message = bytes_message.decode('utf-8')

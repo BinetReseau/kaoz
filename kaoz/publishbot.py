@@ -269,7 +269,11 @@ class Publisher(irc.client.SimpleIRCClient):
         return self.connection.is_connected() and self._has_welcome
 
     def channels(self):
-        return list(self._chans.keys())
+        """Return the list of chans the server has joined"""
+        chanlist = [name for name, chan in self._chans.items()
+                    if not chan.need_join()]
+        chanlist.sort()
+        return chanlist
 
     def is_stopped(self):
         """Tell wether the connection is stopped"""
