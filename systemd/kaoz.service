@@ -1,0 +1,9 @@
+[Unit]
+Description=Kaoz IRC notifier bot
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/kaoz
+
+[Install]
+WantedBy=multi-user.target
