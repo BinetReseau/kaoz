@@ -282,6 +282,15 @@ class Publisher(irc.client.SimpleIRCClient):
             # Start infinite loop
             try:
                 self.ircobj.process_once(0.2)
+            except irc.client.ServerNotConnectedError:
+                # client was not able to send anything
+                # Check state consistency
+                if self._has_welcome:
+                    logger.critical(
+                        "Oops, bad internal state " +
+                        "(server is not really connected), force disconnect")
+                    self._has_welcome = False
+                    self.disconnect("Bad internal state")
             except:
                 logger.critical("An exception occured in IRC bot:")
                 for line in traceback.format_exc().splitlines():
