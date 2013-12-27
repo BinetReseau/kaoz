@@ -182,7 +182,7 @@ class Publisher(irc.client.SimpleIRCClient):
             return
         channel = event.arguments[0]
         logger.info("invited to channel %s" % channel)
-        self.send(channel, "I'm been invited here.")
+        self.send(channel, "Hello, I've been invited here to spam you ;)")
 
     def on_privmsg(self, connection, event):
         """Answer to a user privmsg and die on demand"""
