@@ -92,6 +92,10 @@ class Publisher(irc.client.SimpleIRCClient):
             if self._stop.is_set() or self.is_connected():
                 # Don't connect if server is stopped or if it is already
                 return
+
+            # Ensure is_connected() returns False until the welcome message
+            self._has_welcome = False
+
             logger.info("connecting to %s:%d..." % (self._server, self._port))
             if self._use_ssl:
                 assert has_ssl, "SSL support requested but not available"
@@ -114,6 +118,7 @@ class Publisher(irc.client.SimpleIRCClient):
                     self.connection.set_keepalive(60)
             except irc.client.ServerConnectionError as e:
                 logger.error("Error connecting to %s: %s" % (self._server, e))
+                self._has_welcome = False
 
     def _check_connect(self):
         """Force reconnection periodically"""
