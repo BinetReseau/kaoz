@@ -26,18 +26,25 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_CONFIG_FILE = '/etc/kaoz.conf'
 
-DEFAULT_CONFIG = {
-    'server_password': '',
-    'ssl': 'false',
-    'ssl_cert': '',
-    'reconnection_interval': '60',
-    'host': '',
-    'line_sleep': '1',
-    'fallback_channel': '',
-    'max_join_attempts': '10',
-    'memory_timeout': '3600',
-    'channel_maxlen': '100',
-}
+def get_default_config():
+    """Build a ConfigParser object with the default configuration"""
+    # Do not use the defaults argument of ConfigParser as it applies to all
+    # sections
+    config = ConfigParser()
+    config.add_section('irc')
+    config.set('irc', 'server_password', '')
+    config.set('irc', 'ssl', 'false')
+    config.set('irc', 'reconnection_interval', '60')
+    config.set('irc', 'line_sleep', '1')
+    config.set('irc', 'fallback_channel', '')
+    config.set('irc', 'max_join_attempts', '10')
+    config.set('irc', 'memory_timeout', '3600')
+    config.set('irc', 'channel_maxlen', '100')
+    config.add_section('listener')
+    config.set('listener', 'host', '')
+    config.set('listener', 'ssl', 'false')
+    config.set('listener', 'ssl_cert', '')
+    return config
 
 
 def main(argv):
@@ -70,7 +77,7 @@ def main(argv):
         root_logger.addHandler(log_handler)
 
     # Read configuration
-    config = ConfigParser(DEFAULT_CONFIG)
+    config = get_default_config()
     config.read(opts.config)
 
     # Test wether the configuration gives a good server
