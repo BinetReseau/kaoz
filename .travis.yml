@@ -5,6 +5,16 @@ python:
   - "3.3"
   - "3.4"
 
+env:
+  - IRC_VERSION=11.0.1
+  - IRC_VERSION=12.1
+  - IRC_VERSION=12.1.1
+  # Test the latest revision too
+  - IRC_VERSION=
+
+install:
+  - if [ -n "$IRC_VERSION" ] ; then pip install -q irc==$IRC_VERSION ; else pip install -q irc ; fi
+
 script: "python setup.py test"
 
 sudo: false
