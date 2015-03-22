@@ -307,7 +307,7 @@ class Publisher(irc.client.SimpleIRCClient):
                         "Oops, bad internal state " +
                         "(server is not really connected), force disconnect")
                     self._has_welcome = False
-                    self.disconnect("Bad internal state")
+                    self.connection.disconnect("Bad internal state")
             except:
                 logger.critical("An exception occured in IRC bot:")
                 for line in traceback.format_exc().splitlines():
