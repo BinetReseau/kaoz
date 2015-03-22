@@ -33,7 +33,7 @@ class PublisherTestCase(unittest.TestCase):
             for num_processings in range(20):
                 if pub.is_connected():
                     break
-                pub.ircobj.process_once(1)
+                pub.reactor.process_once(1)
             self.assertTrue(pub.is_connected(), "connect times out")
         finally:
             pub.stop()
@@ -47,7 +47,7 @@ class PublisherTestCase(unittest.TestCase):
             for num_processings in range(5):
                 if pub.is_stopped():
                     break
-                pub.ircobj.process_once(1)
+                pub.reactor.process_once(1)
             self.assertTrue(pub.is_stopped(), "connect was not stopped")
         finally:
             pub.stop()

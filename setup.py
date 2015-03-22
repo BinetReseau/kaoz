@@ -37,7 +37,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'setuptools>=0.8',
-        'irc>=5.0.1',
+        'irc>=11.0',
     ],
     scripts=[
         'bin/kaoz',

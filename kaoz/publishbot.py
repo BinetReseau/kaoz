@@ -83,8 +83,8 @@ class Publisher(irc.client.SimpleIRCClient):
         self._connect_lock = threading.Lock()
         self._has_welcome = False
         self._stop = threading.Event()
-        self.ircobj.execute_every(self._reconn_interval, self._check_connect)
-        self.ircobj.execute_every(self._line_sleep, self._say_messages)
+        self.reactor.execute_every(self._reconn_interval, self._check_connect)
+        self.reactor.execute_every(self._line_sleep, self._say_messages)
 
     def connect(self):
         """Connect to a server"""
@@ -293,7 +293,7 @@ class Publisher(irc.client.SimpleIRCClient):
         while not self._stop.is_set():
             # Start infinite loop
             try:
-                self.ircobj.process_once(0.2)
+                self.reactor.process_once(0.2)
             except irc.client.ServerNotConnectedError:
                 # client was not able to send anything
                 # Check state consistency
