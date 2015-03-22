@@ -44,6 +44,7 @@ def get_default_config():
     config.set('listener', 'host', '')
     config.set('listener', 'ssl', 'false')
     config.set('listener', 'ssl_cert', '')
+    config.add_section('automessages')
     return config
 
 

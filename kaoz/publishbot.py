@@ -71,6 +71,9 @@ class Publisher(irc.client.SimpleIRCClient):
         self._max_join_attempts = config.getint('irc', 'max_join_attempts')
         self._memory_timeout = config.getint('irc', 'memory_timeout')
         self._channel_maxlen = config.getint('irc', 'channel_maxlen')
+        self._automessages = [
+            ('#' + chan, config.get('automessages', chan))
+            for chan in config.options(section='automessages')]
 
         if self._channel_maxlen < 1 or \
             self._channel_maxlen > IRC_CHANMSG_MAXLEN - 1:
@@ -135,12 +138,15 @@ class Publisher(irc.client.SimpleIRCClient):
         self.stop()
 
     def on_welcome(self, connection, event):
-        """Handler for post-connection event.
+        """Handler for post-connection event
 
-        Send all queued messages.
+        Enable _send_messages to actually publish messages
         """
         logger.info("connection made to %s" % event.source)
         self._has_welcome = True
+        # Send automessages
+        for (channel, message) in self._automessages:
+            self.send(channel, message)
 
     def on_disconnect(self, connection, event):
         """On disconnect, reconnect !"""
