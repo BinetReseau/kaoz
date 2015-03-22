@@ -6,7 +6,6 @@ python:
   - "3.4"
 
 env:
-  - IRC_VERSION=11.1
   - IRC_VERSION=12.1
   - IRC_VERSION=12.1.1
   # Test the latest revision too
