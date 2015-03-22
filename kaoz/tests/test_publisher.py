@@ -10,8 +10,8 @@ configure_ircserver_log('INFO')
 configure_logger(kaoz.publishbot.logger, 'DEBUG')
 
 # Uncomment to get logging information from irc.client
-#import irc.client
-#configure_logger(irc.client.log, 'DEBUG')
+# import irc.client
+# configure_logger(irc.client.log, 'DEBUG')
 
 
 class PublisherTestCase(unittest.TestCase):

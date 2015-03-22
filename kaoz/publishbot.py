@@ -75,8 +75,7 @@ class Publisher(irc.client.SimpleIRCClient):
             ('#' + chan, config.get('automessages', chan))
             for chan in config.options(section='automessages')]
 
-        if self._channel_maxlen < 1 or \
-            self._channel_maxlen > IRC_CHANMSG_MAXLEN - 1:
+        if not 1 <= self._channel_maxlen < IRC_CHANMSG_MAXLEN:
             logger.warning("Invalid channel_maxlen value (%d), using 100" %
                            self._channel_maxlen)
             self._channel_maxlen = 100

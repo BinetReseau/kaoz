@@ -12,19 +12,20 @@ import os
 import sys
 import threading
 
+import kaoz
+from kaoz import publishbot
+from kaoz import listener
+
 if sys.version_info < (3,):
     from ConfigParser import SafeConfigParser as ConfigParser
 else:
     from configparser import ConfigParser
 
-import kaoz
-from kaoz import publishbot
-from kaoz import listener
-
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_CONFIG_FILE = '/etc/kaoz.conf'
+
 
 def get_default_config():
     """Build a ConfigParser object with the default configuration"""
@@ -54,13 +55,16 @@ def main(argv):
     parser = optparse.OptionParser(
         usage="usage: %prog [options]",
         version="%prog " + kaoz.__version__)
-    parser.add_option('-c', '--config', action='store', dest='config',
-        help="read configuration from CONFIG", metavar="CONFIG",
+    parser.add_option(
+        '-c', '--config', action='store', dest='config', metavar="CONFIG",
+        help="read configuration from CONFIG",
         default=DEFAULT_CONFIG_FILE)
-    parser.add_option('-d', '--debug', action='store_true', dest='debug',
-        help="log debug messages", default=False)
-    parser.add_option('-l', '--logstd', action='store_true', dest='logstd',
-        help="log messages to standard channel", default=False)
+    parser.add_option(
+        '-d', '--debug', action='store_true', dest='debug', default=False,
+        help="log debug messages")
+    parser.add_option(
+        '-l', '--logstd', action='store_true', dest='logstd', default=False,
+        help="log messages to standard channel")
 
     opts, argv = parser.parse_args(argv)
 
@@ -69,10 +73,12 @@ def main(argv):
     if opts.logstd:
         logging.basicConfig(level=loglevel)
     else:
-        log_handler = logging.handlers.SysLogHandler('/dev/log',
+        log_handler = logging.handlers.SysLogHandler(
+            '/dev/log',
             facility=logging.handlers.SysLogHandler.LOG_DAEMON)
-        log_handler.setFormatter(logging.Formatter(('kaoz[%d]: ' % os.getpid())
-            + '[%(levelname)s] %(name)s: %(message)s'))
+        log_handler.setFormatter(logging.Formatter(
+            ('kaoz[%d]: ' % os.getpid()) +
+            '[%(levelname)s] %(name)s: %(message)s'))
         root_logger = logging.getLogger()
         root_logger.setLevel(loglevel)
         root_logger.addHandler(log_handler)
@@ -83,13 +89,14 @@ def main(argv):
 
     # Test wether the configuration gives a good server
     if config.get('irc', 'server').endswith('example.org'):
-        logger.fatal("configuration file contains example irc server, aborting")
+        logger.fatal(
+            "configuration file contains example irc server, aborting")
         sys.exit(1)
 
     # Start publisher and listener as daemon threads
     event = threading.Event()
     publisher = publishbot.PublisherThread(config, event=event,
-        debug=opts.debug)
+                                           debug=opts.debug)
     publisher.daemon = True
     tcplistener = listener.TCPListener(publisher, config, event=event)
     tcplistener.daemon = True
