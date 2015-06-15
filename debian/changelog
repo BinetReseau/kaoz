@@ -1,3 +1,11 @@
+kaoz (2.2.0-1) unstable; urgency=low
+
+  * New upstream version.
+    + Update dependency to python-irc>=11.0 (backward incompatible change)
+    + New feature: automessage
+
+ -- Guillaume DIDIER <guillaume.didier95@hotmail.fr>  Mon, 15 Jun 2015 22:20:00 +0200
+
 kaoz (2.1.0-1) unstable; urgency=low
 
   * New upstream version.
