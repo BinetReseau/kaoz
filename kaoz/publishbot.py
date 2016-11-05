@@ -7,6 +7,8 @@
 import irc.client
 import irc.connection
 import logging
+import os
+import socket
 import sys
 import threading
 import traceback
@@ -46,6 +48,17 @@ def utf8_cut(bytestr, maxlen):
     return left, bytestr[len(left):]
 
 
+def send_systemd_notification(message):
+    """Inform systemd about the service status"""
+    addr = os.getenv('NOTIFY_SOCKET')
+    if addr[0] == '@':
+        addr = '\0' + addr[1:]
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    sock.connect(addr)
+    sock.sendall(message)
+    sock.close()
+
+
 class Publisher(irc.client.SimpleIRCClient):
     """A basic IRC publisher which sends lines to IRC
 
@@ -55,9 +68,10 @@ class Publisher(irc.client.SimpleIRCClient):
     messages out, in a relatively slow rate to prevent server spamming.
     """
 
-    def __init__(self, config, *args, **kwargs):
+    def __init__(self, config, notify_systemd=False, *args, **kwargs):
         """Instantiate the publisher based on configuration."""
         super(Publisher, self).__init__()
+        self._notify_systemd = notify_systemd
         self._server = config.get('irc', 'server')
         self._port = config.getint('irc', 'port')
         self._use_ssl = config.getboolean('irc', 'ssl')
@@ -146,6 +160,10 @@ class Publisher(irc.client.SimpleIRCClient):
         # Send automessages
         for (channel, message) in self._automessages:
             self.send(channel, message)
+
+        # Inform systemd about the successful connection
+        if self._notify_systemd:
+            send_systemd_notification(b'READY=1\n')
 
     def on_disconnect(self, connection, event):
         """On disconnect, reconnect !"""
@@ -323,14 +341,17 @@ class Publisher(irc.client.SimpleIRCClient):
 class PublisherThread(threading.Thread):
     """Thread to manage a Publisher"""
 
-    def __init__(self, config, event=None, debug=False, *args, **kwargs):
+    def __init__(self, config, event=None, debug=False, notify_systemd=False,
+                 *args, **kwargs):
         """ Initialise a publisher depending on the configuration and
         optionally set an event when the thread ends.
         """
-        self._publisher = Publisher(config, *args, **kwargs)
+        self._publisher = Publisher(config, notify_systemd=notify_systemd,
+                                    *args, **kwargs)
         super(PublisherThread, self).__init__()
         self._event = event
         self._debug = debug
+        self._notify_systemd = notify_systemd
 
     def run(self):
         try:
@@ -340,7 +361,11 @@ class PublisherThread(threading.Thread):
                 logger.critical("Exception " + traceback.format_exc())
             else:
                 logger.critical(traceback.format_exc().splitlines()[-1])
+            if self._notify_systemd:
+                send_systemd_notification(b'STATUS=An exception occured\n')
         finally:
+            if self._notify_systemd:
+                send_systemd_notification(b'STOPPING=1\n')
             if self._event:
                 self._event.set()
 
