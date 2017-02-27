@@ -30,11 +30,12 @@ class TCPListenerHandler(socketserver.BaseRequestHandler):
         self.real_sock = None
         if self.server.use_ssl:
             try:
-                self.real_sock = ssl.wrap_socket(self.request,
-                                            keyfile=self.server.ssl_keyfile,
-                                            certfile=self.server.ssl_certfile,
-                                            server_side=True,
-                                            do_handshake_on_connect=True)
+                self.real_sock = ssl.wrap_socket(
+                    self.request,
+                    keyfile=self.server.ssl_keyfile,
+                    certfile=self.server.ssl_certfile,
+                    server_side=True,
+                    do_handshake_on_connect=True)
                 self.real_sock.settimeout(0.5)
                 self.rfile = self.real_sock.makefile('rwb')
             except Exception:

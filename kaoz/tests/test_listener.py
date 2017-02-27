@@ -7,6 +7,8 @@ import os
 import socket
 import sys
 
+from .common import unittest, get_local_conf, configure_logger
+
 if sys.version_info < (3,):
     import Queue as queue
 else:
@@ -17,8 +19,6 @@ try:
     has_ssl = True
 except ImportError:
     has_ssl = False
-
-from .common import unittest, get_local_conf, configure_logger
 
 configure_logger(kaoz.listener.logger, 'WARNING')
 

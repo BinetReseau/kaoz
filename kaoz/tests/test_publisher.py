@@ -10,8 +10,8 @@ configure_ircserver_log('INFO')
 configure_logger(kaoz.publishbot.logger, 'DEBUG')
 
 # Uncomment to get logging information from irc.client
-#import irc.client
-#configure_logger(irc.client.log, 'DEBUG')
+# import irc.client
+# configure_logger(irc.client.log, 'DEBUG')
 
 
 class PublisherTestCase(unittest.TestCase):
@@ -33,7 +33,7 @@ class PublisherTestCase(unittest.TestCase):
             for num_processings in range(20):
                 if pub.is_connected():
                     break
-                pub.ircobj.process_once(1)
+                pub.reactor.process_once(1)
             self.assertTrue(pub.is_connected(), "connect times out")
         finally:
             pub.stop()
@@ -47,7 +47,7 @@ class PublisherTestCase(unittest.TestCase):
             for num_processings in range(5):
                 if pub.is_stopped():
                     break
-                pub.ircobj.process_once(1)
+                pub.reactor.process_once(1)
             self.assertTrue(pub.is_stopped(), "connect was not stopped")
         finally:
             pub.stop()
@@ -126,3 +126,22 @@ class PublisherTestCase(unittest.TestCase):
             self.assertEqual(len(bytes_got), len(bytes_message),
                              "mismatched length")
             self.assertEqual(bytes_got, bytes_message, "corrupted message")
+
+    def test_automessage(self):
+        # Configure an auto-message
+        text = 'This is an automessage'
+        self.config.set('automessages', 'auto', text)
+        self.config.set('irc', 'reconnection_interval', '1')
+        # Launch the client
+        with kaoz.publishbot.PublisherThread(self.config) as pub:
+            message = self.ircsrv.get_displayed_message(10)
+            self.assertFalse(message is None, "message timeout")
+            self.assertEqual(message.channel, '#auto', "wrong channel")
+            self.assertEqual(message.text, text, "wrong text")
+
+            # Test disconnection/reconnection
+            pub._publisher.connection.disconnect()
+            message = self.ircsrv.get_displayed_message(10)
+            self.assertFalse(message is None, "message timeout")
+            self.assertEqual(message.channel, '#auto', "wrong channel")
+            self.assertEqual(message.text, text, "wrong text")

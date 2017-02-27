@@ -9,12 +9,12 @@ import logging
 import os
 import sys
 
+from .ircserver import IRCServerThread, logger as ircserver_logger
+
 if sys.version_info < (3,):
     from ConfigParser import SafeConfigParser as ConfigParser
 else:
     from configparser import ConfigParser
-
-from .ircserver import IRCServerThread, logger as ircserver_logger
 
 try:
     import unittest2 as unittest
@@ -27,7 +27,7 @@ def get_local_conf(filename=None):
     if not filename:
         filename = "kaoz.local.conf"
     path = os.path.join(os.path.dirname(__file__), filename)
-    config = ConfigParser(kaoz.bot.DEFAULT_CONFIG)
+    config = kaoz.bot.get_default_config()
     config.read(path)
     return config
 

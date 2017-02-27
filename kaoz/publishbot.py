@@ -71,9 +71,11 @@ class Publisher(irc.client.SimpleIRCClient):
         self._max_join_attempts = config.getint('irc', 'max_join_attempts')
         self._memory_timeout = config.getint('irc', 'memory_timeout')
         self._channel_maxlen = config.getint('irc', 'channel_maxlen')
+        self._automessages = [
+            ('#' + chan, config.get('automessages', chan))
+            for chan in config.options(section='automessages')]
 
-        if self._channel_maxlen < 1 or \
-            self._channel_maxlen > IRC_CHANMSG_MAXLEN - 1:
+        if not 1 <= self._channel_maxlen < IRC_CHANMSG_MAXLEN:
             logger.warning("Invalid channel_maxlen value (%d), using 100" %
                            self._channel_maxlen)
             self._channel_maxlen = 100
@@ -83,8 +85,8 @@ class Publisher(irc.client.SimpleIRCClient):
         self._connect_lock = threading.Lock()
         self._has_welcome = False
         self._stop = threading.Event()
-        self.ircobj.execute_every(self._reconn_interval, self._check_connect)
-        self.ircobj.execute_every(self._line_sleep, self._say_messages)
+        self.reactor.execute_every(self._reconn_interval, self._check_connect)
+        self.reactor.execute_every(self._line_sleep, self._say_messages)
 
     def connect(self):
         """Connect to a server"""
@@ -92,6 +94,10 @@ class Publisher(irc.client.SimpleIRCClient):
             if self._stop.is_set() or self.is_connected():
                 # Don't connect if server is stopped or if it is already
                 return
+
+            # Ensure is_connected() returns False until the welcome message
+            self._has_welcome = False
+
             logger.info("connecting to %s:%d..." % (self._server, self._port))
             if self._use_ssl:
                 assert has_ssl, "SSL support requested but not available"
@@ -114,6 +120,7 @@ class Publisher(irc.client.SimpleIRCClient):
                     self.connection.set_keepalive(60)
             except irc.client.ServerConnectionError as e:
                 logger.error("Error connecting to %s: %s" % (self._server, e))
+                self._has_welcome = False
 
     def _check_connect(self):
         """Force reconnection periodically"""
@@ -130,12 +137,15 @@ class Publisher(irc.client.SimpleIRCClient):
         self.stop()
 
     def on_welcome(self, connection, event):
-        """Handler for post-connection event.
+        """Handler for post-connection event
 
-        Send all queued messages.
+        Enable _send_messages to actually publish messages
         """
         logger.info("connection made to %s" % event.source)
         self._has_welcome = True
+        # Send automessages
+        for (channel, message) in self._automessages:
+            self.send(channel, message)
 
     def on_disconnect(self, connection, event):
         """On disconnect, reconnect !"""
@@ -182,7 +192,7 @@ class Publisher(irc.client.SimpleIRCClient):
             return
         channel = event.arguments[0]
         logger.info("invited to channel %s" % channel)
-        self.send(channel, "I'm been invited here.")
+        self.send(channel, "Hello, I've been invited here to spam you ;)")
 
     def on_privmsg(self, connection, event):
         """Answer to a user privmsg and die on demand"""
@@ -288,7 +298,7 @@ class Publisher(irc.client.SimpleIRCClient):
         while not self._stop.is_set():
             # Start infinite loop
             try:
-                self.ircobj.process_once(0.2)
+                self.reactor.process_once(0.2)
             except irc.client.ServerNotConnectedError:
                 # client was not able to send anything
                 # Check state consistency
@@ -297,7 +307,7 @@ class Publisher(irc.client.SimpleIRCClient):
                         "Oops, bad internal state " +
                         "(server is not really connected), force disconnect")
                     self._has_welcome = False
-                    self.disconnect("Bad internal state")
+                    self.connection.disconnect("Bad internal state")
             except:
                 logger.critical("An exception occured in IRC bot:")
                 for line in traceback.format_exc().splitlines():

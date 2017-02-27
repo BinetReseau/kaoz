@@ -36,8 +36,8 @@ setup(
     download_url='http://pypi.python.org/pypi/kaoz/',
     packages=find_packages(),
     install_requires=[
-        'distribute',
-        'irc>=5.0.1',
+        'setuptools>=0.8',
+        'irc>=11.0',
     ],
     scripts=[
         'bin/kaoz',
