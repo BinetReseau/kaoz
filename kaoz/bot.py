@@ -65,6 +65,9 @@ def main(argv):
     parser.add_option(
         '-l', '--logstd', action='store_true', dest='logstd', default=False,
         help="log messages to standard channel")
+    parser.add_option(
+        '--notify-systemd', action='store_true', dest='notify_systemd', default=False,
+        help="notify systemd service manager about the status of the service")
 
     opts, argv = parser.parse_args(argv)
 
@@ -96,7 +99,8 @@ def main(argv):
     # Start publisher and listener as daemon threads
     event = threading.Event()
     publisher = publishbot.PublisherThread(config, event=event,
-                                           debug=opts.debug)
+                                           debug=opts.debug,
+                                           notify_systemd=opts.notify_systemd)
     publisher.daemon = True
     tcplistener = listener.TCPListener(publisher, config, event=event)
     tcplistener.daemon = True
