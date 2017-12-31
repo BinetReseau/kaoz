@@ -1,4 +1,15 @@
+include LICENCE
+include README.rst
+include requirements_dev.txt
+exclude tox.ini .travis.yml
+
 include etc/kaoz.conf
+
 include kaoz/tests/kaoz.local.conf
 include kaoz/tests/certs/kaoz-example.crt
 include kaoz/tests/certs/kaoz-example.key
+exclude kaoz/tests/certs/create-certs.sh
+exclude kaoz/tests/certs/openssl.cnf
+
+prune initd
+prune systemd
