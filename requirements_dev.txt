@@ -1,0 +1,5 @@
+-e .
+
+check_manifest
+flake8
+pytest

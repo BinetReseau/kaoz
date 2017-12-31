@@ -1,22 +1,223 @@
+sudo: false
 language: python
-python:
-  - "2.7"
-  - "3.2"
-  - "3.3"
-  - "3.4"
-
-env:
-  - IRC_VERSION=12.1
-  - IRC_VERSION=12.1.1
-  # Test the latest revision too
-  - IRC_VERSION=
+cache: pip
 
 install:
-  - if [ -n "$IRC_VERSION" ] ; then pip install irc==$IRC_VERSION ; else pip install irc ; fi
+  - pip install tox
 
-script: "python setup.py test"
+script:
+  # Use old version of pytest when using deprecated Python versions
+  # Hotpatching requirements_dev.txt is needed because adding a constraint makes
+  # pip fail due to "Double requirement given"
+  - if echo "$TOXENV" | grep -q '^py32-' ; then sed -e 's/^pytest$/pytest<3.1/' -i requirements_dev.txt ; fi
+  - if echo "$TOXENV" | grep -q '^py33-' ; then sed -e 's/^pytest$/pytest<3.3/' -i requirements_dev.txt ; fi
 
-sudo: false
+matrix:
+  include:
+    - python: 2.7
+      env: TOXENV=py27-irc121
+    - python: 2.7
+      env: TOXENV=py27-irc122
+    - python: 2.7
+      env: TOXENV=py27-irc123
+    - python: 2.7
+      env: TOXENV=py27-irc124
+    - python: 2.7
+      env: TOXENV=py27-irc130
+    - python: 2.7
+      env: TOXENV=py27-irc131
+    - python: 2.7
+      env: TOXENV=py27-irc132
+    - python: 2.7
+      env: TOXENV=py27-irc133
+    - python: 2.7
+      env: TOXENV=py27-irc140
+    - python: 2.7
+      env: TOXENV=py27-irc141
+    - python: 2.7
+      env: TOXENV=py27-irc142
+    - python: 2.7
+      env: TOXENV=py27-irc150
+    - python: 2.7
+      env: TOXENV=py27-irc151
+    - python: 2.7
+      env: TOXENV=py27-irc160
+    - python: 2.7
+      env: TOXENV=py27-irc161
+    - python: 2.7
+      env: TOXENV=py27-irc162
+    - python: 2.7
+      env: TOXENV=py27-ircLAST
+    - python: 3.2
+      env: TOXENV=py32-irc121
+    - python: 3.2
+      env: TOXENV=py32-irc122
+    - python: 3.2
+      env: TOXENV=py32-irc123
+    - python: 3.2
+      env: TOXENV=py32-irc124
+    - python: 3.2
+      env: TOXENV=py32-irc130
+    - python: 3.2
+      env: TOXENV=py32-irc131
+    - python: 3.2
+      env: TOXENV=py32-irc132
+    - python: 3.2
+      env: TOXENV=py32-irc133
+    - python: 3.2
+      env: TOXENV=py32-irc140
+    - python: 3.2
+      env: TOXENV=py32-irc141
+    - python: 3.2
+      env: TOXENV=py32-irc142
+    - python: 3.2
+      env: TOXENV=py32-irc150
+    - python: 3.2
+      env: TOXENV=py32-irc151
+    - python: 3.2
+      env: TOXENV=py32-irc160
+    - python: 3.2
+      env: TOXENV=py32-irc161
+    - python: 3.2
+      env: TOXENV=py32-irc162
+    - python: 3.2
+      env: TOXENV=py32-ircLAST
+    - python: 3.3
+      env: TOXENV=py33-irc121
+    - python: 3.3
+      env: TOXENV=py33-irc122
+    - python: 3.3
+      env: TOXENV=py33-irc123
+    - python: 3.3
+      env: TOXENV=py33-irc124
+    - python: 3.3
+      env: TOXENV=py33-irc130
+    - python: 3.3
+      env: TOXENV=py33-irc131
+    - python: 3.3
+      env: TOXENV=py33-irc132
+    - python: 3.3
+      env: TOXENV=py33-irc133
+    - python: 3.3
+      env: TOXENV=py33-irc140
+    - python: 3.3
+      env: TOXENV=py33-irc141
+    - python: 3.3
+      env: TOXENV=py33-irc142
+    - python: 3.3
+      env: TOXENV=py33-irc150
+    - python: 3.3
+      env: TOXENV=py33-irc151
+    - python: 3.3
+      env: TOXENV=py33-irc160
+    - python: 3.3
+      env: TOXENV=py33-irc161
+    - python: 3.3
+      env: TOXENV=py33-irc162
+    - python: 3.3
+      env: TOXENV=py33-ircLAST
+    - python: 3.4
+      env: TOXENV=py34-irc121
+    - python: 3.4
+      env: TOXENV=py34-irc122
+    - python: 3.4
+      env: TOXENV=py34-irc123
+    - python: 3.4
+      env: TOXENV=py34-irc124
+    - python: 3.4
+      env: TOXENV=py34-irc130
+    - python: 3.4
+      env: TOXENV=py34-irc131
+    - python: 3.4
+      env: TOXENV=py34-irc132
+    - python: 3.4
+      env: TOXENV=py34-irc133
+    - python: 3.4
+      env: TOXENV=py34-irc140
+    - python: 3.4
+      env: TOXENV=py34-irc141
+    - python: 3.4
+      env: TOXENV=py34-irc142
+    - python: 3.4
+      env: TOXENV=py34-irc150
+    - python: 3.4
+      env: TOXENV=py34-irc151
+    - python: 3.4
+      env: TOXENV=py34-irc160
+    - python: 3.4
+      env: TOXENV=py34-irc161
+    - python: 3.4
+      env: TOXENV=py34-irc162
+    - python: 3.4
+      env: TOXENV=py34-ircLAST
+    - python: 3.5
+      env: TOXENV=py35-irc121
+    - python: 3.5
+      env: TOXENV=py35-irc122
+    - python: 3.5
+      env: TOXENV=py35-irc123
+    - python: 3.5
+      env: TOXENV=py35-irc124
+    - python: 3.5
+      env: TOXENV=py35-irc130
+    - python: 3.5
+      env: TOXENV=py35-irc131
+    - python: 3.5
+      env: TOXENV=py35-irc132
+    - python: 3.5
+      env: TOXENV=py35-irc133
+    - python: 3.5
+      env: TOXENV=py35-irc140
+    - python: 3.5
+      env: TOXENV=py35-irc141
+    - python: 3.5
+      env: TOXENV=py35-irc142
+    - python: 3.5
+      env: TOXENV=py35-irc150
+    - python: 3.5
+      env: TOXENV=py35-irc151
+    - python: 3.5
+      env: TOXENV=py35-irc160
+    - python: 3.5
+      env: TOXENV=py35-irc161
+    - python: 3.5
+      env: TOXENV=py35-irc162
+    - python: 3.5
+      env: TOXENV=py35-ircLAST
+    - python: 3.6
+      env: TOXENV=py36-irc121
+    - python: 3.6
+      env: TOXENV=py36-irc122
+    - python: 3.6
+      env: TOXENV=py36-irc123
+    - python: 3.6
+      env: TOXENV=py36-irc124
+    - python: 3.6
+      env: TOXENV=py36-irc130
+    - python: 3.6
+      env: TOXENV=py36-irc131
+    - python: 3.6
+      env: TOXENV=py36-irc132
+    - python: 3.6
+      env: TOXENV=py36-irc133
+    - python: 3.6
+      env: TOXENV=py36-irc140
+    - python: 3.6
+      env: TOXENV=py36-irc141
+    - python: 3.6
+      env: TOXENV=py36-irc142
+    - python: 3.6
+      env: TOXENV=py36-irc150
+    - python: 3.6
+      env: TOXENV=py36-irc151
+    - python: 3.6
+      env: TOXENV=py36-irc160
+    - python: 3.6
+      env: TOXENV=py36-irc161
+    - python: 3.6
+      env: TOXENV=py36-irc162
+    - python: 3.6
+      env: TOXENV=py36-ircLAST
 
 notifications:
   email: false
