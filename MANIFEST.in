@@ -1,7 +1,7 @@
 include LICENCE
 include README.rst
 include requirements_dev.txt
-exclude tox.ini .travis.yml
+exclude Makefile tox.ini .flake8 .travis.yml
 
 include etc/kaoz.conf
 
