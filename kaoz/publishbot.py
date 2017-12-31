@@ -99,8 +99,16 @@ class Publisher(irc.client.SimpleIRCClient):
         self._connect_lock = threading.Lock()
         self._has_welcome = False
         self._stop = threading.Event()
-        self.reactor.execute_every(self._reconn_interval, self._check_connect)
-        self.reactor.execute_every(self._line_sleep, self._say_messages)
+        # Use scheduler if available (python-irc>=15.0)
+        if hasattr(self.reactor, 'scheduler'):
+            self.reactor.scheduler.execute_every(self._reconn_interval,
+                                                 self._check_connect)
+            self.reactor.scheduler.execute_every(self._line_sleep,
+                                                 self._say_messages)
+        else:
+            self.reactor.execute_every(self._reconn_interval,
+                                       self._check_connect)
+            self.reactor.execute_every(self._line_sleep, self._say_messages)
 
     def connect(self):
         """Connect to a server"""
