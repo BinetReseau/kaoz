@@ -74,7 +74,7 @@ class PublisherTestCase(unittest.TestCase):
 
             def u(s):
                 if sys.version_info < (3,):
-                    return unicode(s, "unicode_escape")
+                    return unicode(s, "unicode_escape")  # noqa
                 else:
                     return s
 

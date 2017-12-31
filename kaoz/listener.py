@@ -122,7 +122,7 @@ class TCPListener(threading.Thread):
         try:
             logger.debug("Server runs")
             self._server.serve_forever()
-        except:
+        except Exception:
             logger.critical(traceback.format_exc().splitlines()[-1])
         finally:
             logger.debug("Server has been shut down")
