@@ -11,9 +11,9 @@ import os
 from .ircserver import IRCServerThread, logger as ircserver_logger
 
 try:
-    import unittest2 as unittest
+    import unittest2 as unittest  # noqa
 except ImportError:
-    import unittest
+    import unittest  # noqa
 
 
 def get_local_conf(filename=None):
