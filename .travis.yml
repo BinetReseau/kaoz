@@ -219,6 +219,10 @@ matrix:
     - python: 3.6
       env: TOXENV=py36-ircLAST
 
+    # Linting
+    - python: "3.6"
+      env: TOXENV=lint
+
 notifications:
   email: false
   irc: "irc.rezosup.org#kaoz"
